@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// Widget que muestra un coche arrastrable horizontalmente.
-/// 
-/// Permite al usuario mover el coche hacia la izquierda o derecha
+/// Widget que muestra un carro arrastrable horizontalmente.
+///
+/// Permite al usuario mover el carro hacia la izquierda o derecha
 /// mediante gestos de arrastre (mouse o toque táctil).
 class DraggableCar extends StatefulWidget {
-  /// Ruta de la imagen del coche
+  /// Ruta de la imagen del carro
   final String imagePath;
-  
-  /// Ancho del coche
+
+  /// Ancho del carro
   final double width;
-  
-  /// Alto del coche
+
+  /// Alto del carro
   final double height;
 
   const DraggableCar({
@@ -26,17 +26,17 @@ class DraggableCar extends StatefulWidget {
 }
 
 class _DraggableCarState extends State<DraggableCar> {
-  /// Posición horizontal del coche (offset desde el centro)
+  /// Posición horizontal del carro (offset desde el centro)
   double _xPosition = 0.0;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calcula los límites para que el coche no salga de la pantalla
+        // Calcula los límites para que el carro no salga de la pantalla
         final maxWidth = constraints.maxWidth;
         final carHalfWidth = widget.width / 2;
-        
+
         // Limita la posición entre los bordes
         final minX = -maxWidth / 2 + carHalfWidth;
         final maxX = maxWidth / 2 - carHalfWidth;
@@ -46,8 +46,8 @@ class _DraggableCarState extends State<DraggableCar> {
             setState(() {
               // Actualiza la posición basándose en el delta del gesto
               _xPosition += details.delta.dx;
-              
-              // Asegura que el coche no salga de los límites
+
+              // Asegura que el carro no salga de los límites
               _xPosition = _xPosition.clamp(minX, maxX);
             });
           },
@@ -71,19 +71,19 @@ class _DraggableCarState extends State<DraggableCar> {
   }
 }
 
-/// Widget que muestra un coche arrastrable verticalmente para el layout horizontal.
-/// 
-/// Permite al usuario mover el coche hacia arriba o abajo
+/// Widget que muestra un carro arrastrable verticalmente para el layout horizontal.
+///
+/// Permite al usuario mover el carro hacia arriba o abajo
 /// mediante gestos de arrastre (mouse o toque táctil).
 /// Se usa en la orientación horizontal de la aplicación.
 class DraggableCarHorizontal extends StatefulWidget {
-  /// Ruta de la imagen del coche
+  /// Ruta de la imagen del carro
   final String imagePath;
-  
-  /// Ancho del coche
+
+  /// Ancho del carro
   final double width;
-  
-  /// Alto del coche
+
+  /// Alto del carro
   final double height;
 
   const DraggableCarHorizontal({
@@ -98,17 +98,17 @@ class DraggableCarHorizontal extends StatefulWidget {
 }
 
 class _DraggableCarHorizontalState extends State<DraggableCarHorizontal> {
-  /// Posición vertical del coche (offset desde el centro)
+  /// Posición vertical del carro (offset desde el centro)
   double _yPosition = 0.0;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calcula los límites para que el coche no salga de la pantalla
+        // Calcula los límites para que el carro no salga de la pantalla
         final maxHeight = constraints.maxHeight;
         final carHalfHeight = widget.height / 2;
-        
+
         // Limita la posición entre los bordes
         final minY = -maxHeight / 2 + carHalfHeight;
         final maxY = maxHeight / 2 - carHalfHeight;
@@ -118,8 +118,8 @@ class _DraggableCarHorizontalState extends State<DraggableCarHorizontal> {
             setState(() {
               // Actualiza la posición basándose en el delta del gesto
               _yPosition += details.delta.dy;
-              
-              // Asegura que el coche no salga de los límites
+
+              // Asegura que el carro no salga de los límites
               _yPosition = _yPosition.clamp(minY, maxY);
             });
           },
