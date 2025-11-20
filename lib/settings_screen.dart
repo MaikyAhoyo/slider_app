@@ -25,7 +25,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final List<CarOption> _carOptions = [
     CarOption(name: 'Naranja Clásico', assetPath: 'assets/cars/orange_car.png'),
     CarOption(name: 'Azul Veloz', assetPath: 'assets/cars/blue_car.png'),
-    CarOption(name: 'Verde Deportivo', assetPath: 'assets/cars/green_car.png'),
+    CarOption(
+      name: 'Morado Deportivo',
+      assetPath: 'assets/cars/purple_green_car.png',
+    ),
+    CarOption(
+      name: 'Rojo Rayo',
+      assetPath: 'assets/cars/red_lightning_car.png',
+    ),
   ];
 
   @override
@@ -141,12 +148,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 const SizedBox(width: 20),
                                 // Nombre del coche
-                                Text(
-                                  car.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Text(
+                                    car.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    softWrap: true,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const Spacer(),
