@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
-import 'dart:async'; // Para el Timer
 
 class GameScreen extends StatefulWidget {
   final String playerName;
@@ -57,9 +56,6 @@ class _GameScreenState extends State<GameScreen>
       // Ajusta este valor para que se consuma más rápido o más lento
       _fuel -= 0.05; // Ejemplo: reduce la gasolina lentamente
 
-      // 2. Incrementar la puntuación (por tiempo/distancia)
-      _score += 1;
-
       // 3. Lógica futura:
       // - Mover obstáculos y monedas hacia abajo
       // - Comprobar colisiones (carro vs obstáculo, carro vs moneda)
@@ -84,10 +80,10 @@ class _GameScreenState extends State<GameScreen>
     _gameLoopController.stop();
 
     // Guardar la puntuación en Supabase
-    widget.supabaseService.checkAndUpsertPlayer(
-      playerName: widget.playerName,
-      score: _score,
-    );
+    //widget.supabaseService.checkAndUpsertPlayer(
+    //  playerName: widget.playerName,
+    //  score: _score,
+    //);
 
     // Muestra el diálogo de Game Over
     showDialog(
