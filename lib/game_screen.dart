@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
+import 'widgets/pause_menu.dart';
 
 class GameScreen extends StatefulWidget {
   final String playerName;
@@ -26,7 +27,14 @@ class _GameScreenState extends State<GameScreen>
   double _fuel = 100.0;
   int _tires = 3;
   int _score = 0;
+  bool _isPaused = false;
   bool _isGameOver = false;
+  void _resumeGame() {
+    setState(() {
+      _isPaused = false;
+    });
+    _gameLoopController.repeat();
+  }
 
   @override
   void initState() {
@@ -70,6 +78,27 @@ class _GameScreenState extends State<GameScreen>
       //   _endGame("¡Sin llantas!");
       // }
     });
+  }
+
+  /// Pausa el juego, detiene el bucle
+  void _pauseGame() {
+    setState(() {
+      _isPaused = true;
+    });
+    _gameLoopController.stop();
+  }
+
+  /// Reinicia el juego, resetea los valores y vuelve a iniciar el bucle
+  void _restartGame() {
+    setState(() {
+      _fuel = 100.0;
+      _tires = 3;
+      _score = 0;
+      _isGameOver = false;
+    });
+    _gameLoopController.reset();
+    _gameLoopController.forward();
+    _isPaused = false;
   }
 
   /// Termina el juego, detiene el bucle y muestra el diálogo
@@ -148,12 +177,20 @@ class _GameScreenState extends State<GameScreen>
 
           // 4. Interfaz de Usuario (UI) en la parte superior
           Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
+
+          // 5. Menú de Pausa
+          if (_isPaused)
+            PauseMenu(
+              onResume: _resumeGame,
+              onRestart: _restartGame,
+              onQuit: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );
   }
 
-  /// Construye la UI del juego (Puntos, Gasolina, Llantas)
+  /// Construye la UI del juego (Pausa, Puntos, Gasolina, Llantas)
   Widget _buildGameUI() {
     return Container(
       padding: const EdgeInsets.all(10.0),
@@ -164,6 +201,17 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Botón del menú de pausa
+          IconButton(
+            icon: const Icon(Icons.pause, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isPaused = !_isPaused;
+              });
+              _pauseGame();
+            },
+          ),
+
           // Puntuación
           Text(
             'Puntos: $_score',
