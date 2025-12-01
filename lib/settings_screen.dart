@@ -1,7 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'services/audio_manager.dart';
 
-/// Pantalla para que el usuario cambie sus preferencias
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -10,10 +10,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Referencia al AudioManager
   final AudioManager _audioManager = AudioManager.instance;
 
-  // Variables de estado local para los sliders (para actualización fluida de UI)
   double _masterVolume = 1.0;
   double _musicVolume = 1.0;
   double _sfxVolume = 1.0;
@@ -21,7 +19,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializar con los valores actuales del manager
     _masterVolume = _audioManager.masterVolume;
     _musicVolume = _audioManager.musicVolume;
     _sfxVolume = _audioManager.sfxVolume;
@@ -30,9 +27,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
       body: Stack(
         children: [
-          // Fondo
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -41,55 +57,122 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          // Overlay oscuro
-          Container(color: Colors.black.withOpacity(0.6)),
 
-          // Contenido
-          SafeArea(
-            child: Column(
-              children: [
-                // AppBar
-                AppBar(
-                  title: const Text(
-                    'Configuración',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(color: Colors.black.withOpacity(0.5)),
+          ),
+
+          Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 25,
+                        vertical: 40,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade900.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.15),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 40,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.equalizer_rounded,
+                            size: 50,
+                            color: Colors.white24,
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'CONFIGURACIÓN',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 20,
+                                  color: Colors.blueAccent,
+                                  offset: Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Ajustes de Audio",
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                              letterSpacing: 1,
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          _buildNeonSlider(
+                            label: "Volumen General",
+                            value: _masterVolume,
+                            icon: Icons.volume_up_rounded,
+                            activeColor: Colors.purpleAccent,
+                            onChanged: (val) {
+                              setState(() => _masterVolume = val);
+                              _audioManager.setMasterVolume(val);
+                            },
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          _buildNeonSlider(
+                            label: "Música",
+                            value: _musicVolume,
+                            icon: Icons.music_note_rounded,
+                            activeColor: Colors.cyanAccent,
+                            onChanged: (val) {
+                              setState(() => _musicVolume = val);
+                              _audioManager.setMusicVolume(val);
+                            },
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          _buildNeonSlider(
+                            label: "Efectos (SFX)",
+                            value: _sfxVolume,
+                            icon: Icons.graphic_eq_rounded,
+                            activeColor: Colors.orangeAccent,
+                            onChanged: (val) {
+                              setState(() => _sfxVolume = val);
+                              _audioManager.setSfxVolume(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Título
-                const Text(
-                  'Ajustes de Audio',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Sliders de Volumen
-                _buildVolumeSlider("Volumen General", _masterVolume, (val) {
-                  setState(() => _masterVolume = val);
-                  _audioManager.setMasterVolume(val);
-                }),
-                _buildVolumeSlider("Música", _musicVolume, (val) {
-                  setState(() => _musicVolume = val);
-                  _audioManager.setMusicVolume(val);
-                }),
-                _buildVolumeSlider("Efectos de Sonido", _sfxVolume, (val) {
-                  setState(() => _sfxVolume = val);
-                  _audioManager.setSfxVolume(val);
-                }),
-              ],
+              ),
             ),
           ),
         ],
@@ -97,36 +180,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildVolumeSlider(
-    String label,
-    double value,
-    ValueChanged<double> onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-          ),
-          Row(
-            children: [
-              const Icon(Icons.volume_mute, color: Colors.white70),
-              Expanded(
-                child: Slider(
-                  value: value,
-                  onChanged: onChanged,
-                  activeColor: Colors.redAccent,
-                  inactiveColor: Colors.white24,
+  Widget _buildNeonSlider({
+    required String label,
+    required double value,
+    required IconData icon,
+    required Color activeColor,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: activeColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: activeColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
-              const Icon(Icons.volume_up, color: Colors.white70),
-            ],
+            ),
+            Text(
+              "${(value * 100).toInt()}%",
+              style: TextStyle(
+                color: activeColor,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 6.0,
+            trackShape: const RoundedRectSliderTrackShape(),
+            activeTrackColor: activeColor,
+            inactiveTrackColor: Colors.grey.shade800,
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 10.0,
+              pressedElevation: 8.0,
+            ),
+            thumbColor: Colors.white,
+            overlayColor: activeColor.withOpacity(0.2),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
+            tickMarkShape: const RoundSliderTickMarkShape(),
+            activeTickMarkColor: activeColor,
+            inactiveTickMarkColor: Colors.white70,
           ),
-        ],
-      ),
+          child: Slider(value: value, onChanged: onChanged),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Define un modelo simple para un coche
 class CarOption {
   final String name;
   final String assetPath;
@@ -8,7 +8,6 @@ class CarOption {
   CarOption({required this.name, required this.assetPath});
 }
 
-/// Pantalla para que el usuario elija su coche
 class StylesScreen extends StatefulWidget {
   final String currentCarAsset;
 
@@ -44,7 +43,30 @@ class _StylesScreenState extends State<StylesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos el mismo fondo que el menú para consistencia
+      extendBodyBehindAppBar: true,
+
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(_selectedCarAsset);
+            },
+          ),
+        ),
+      ),
+
       body: Stack(
         children: [
           Container(
@@ -55,131 +77,178 @@ class _StylesScreenState extends State<StylesScreen> {
               ),
             ),
           ),
-          // Overlay oscuro
-          Container(color: Colors.black.withOpacity(0.6)),
 
-          // Contenido
-          SafeArea(
-            child: Column(
-              children: [
-                // AppBar personalizada
-                AppBar(
-                  title: const Text(
-                    'Estilos',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      // Devuelve el coche seleccionado al menú
-                      Navigator.of(context).pop(_selectedCarAsset);
-                    },
-                  ),
-                ),
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(color: Colors.black.withOpacity(0.5)),
+          ),
 
-                // Título de la sección
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Elige tu coche',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+          Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 450),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(25),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade900.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 40,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.directions_car_filled_rounded,
+                          size: 50,
+                          color: Colors.white24,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'GARAJE',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 3,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 20,
+                                color: Colors.pinkAccent,
+                                offset: Offset(0, 0),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        const Text(
+                          "Selecciona tu vehículo",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 14,
+                            letterSpacing: 1,
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // --- LISTA DE COCHES ---
+                        Flexible(
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _carOptions.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 15),
+                            itemBuilder: (context, index) {
+                              final car = _carOptions[index];
+                              final isSelected =
+                                  car.assetPath == _selectedCarAsset;
+                              return _buildCarCard(car, isSelected);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-
-                // Lista de coches
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _carOptions.length,
-                    itemBuilder: (context, index) {
-                      final car = _carOptions[index];
-                      final isSelected = car.assetPath == _selectedCarAsset;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedCarAsset = car.assetPath;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.redAccent.withOpacity(0.8)
-                                  : Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.redAccent
-                                    : Colors.white.withOpacity(0.2),
-                                width: 2,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                // Imagen del coche
-                                Image.asset(
-                                  car.assetPath,
-                                  width: 100,
-                                  height: 60,
-                                  fit: BoxFit.contain,
-                                  // Manejo de error si la imagen no carga
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 100,
-                                      height: 60,
-                                      color: Colors.grey[800],
-                                      child: const Icon(
-                                        Icons.error_outline,
-                                        color: Colors.white,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 20),
-                                // Nombre del coche
-                                Expanded(
-                                  child: Text(
-                                    car.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    softWrap: true,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const Spacer(),
-                                // Indicador de selección
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.white,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Widget para cada tarjeta de coche
+  Widget _buildCarCard(CarOption car, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCarAsset = car.assetPath;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.pinkAccent.withOpacity(0.15)
+              : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? Colors.pinkAccent
+                : Colors.white.withOpacity(0.1),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.pinkAccent.withOpacity(0.3),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black38,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Image.asset(
+                car.assetPath,
+                width: 70,
+                height: 40,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.broken_image, color: Colors.white54);
+                },
+              ),
+            ),
+
+            const SizedBox(width: 15),
+
+            Expanded(
+              child: Text(
+                car.name,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.white70,
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.pinkAccent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, size: 16, color: Colors.white),
+              ),
+          ],
+        ),
       ),
     );
   }

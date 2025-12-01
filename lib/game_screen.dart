@@ -407,7 +407,6 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-
           // Botón del menú de pausa
           IconButton(
             icon: const Icon(Icons.pause, color: Colors.white),
@@ -433,6 +432,7 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
             ],
+          ),
 
           // Llantas
           Row(
