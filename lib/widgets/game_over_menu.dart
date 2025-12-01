@@ -5,12 +5,14 @@ class GameOverMenu extends StatelessWidget {
   final String reason;
   final int score;
   final VoidCallback onReturnToMenu;
+  final VoidCallback onRestart;
 
   const GameOverMenu({
     super.key,
     required this.reason,
     required this.score,
     required this.onReturnToMenu,
+    required this.onRestart,
   });
 
   @override
@@ -96,11 +98,21 @@ class GameOverMenu extends StatelessWidget {
 
                     const SizedBox(height: 35),
 
+                    // BOTÓN REINICIAR
+                    _buildNeonButton(
+                      label: 'REINICIAR',
+                      icon: Icons.refresh_rounded,
+                      color: const Color(0xFF00E676),
+                      onPressed: onRestart,
+                    ),
+
+                    const SizedBox(height: 15),
+
                     Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
 
                     const SizedBox(height: 15),
 
-                    // BOTÓN
+                    // BOTÓN SALIR AL MENÚ
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -110,7 +122,7 @@ class GameOverMenu extends StatelessWidget {
                           size: 18,
                         ),
                         label: const Text(
-                          'VOLVER AL MENÚ',
+                          'SALIR AL MENÚ',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.5,
@@ -137,6 +149,53 @@ class GameOverMenu extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNeonButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.2),
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          elevation: 0,
+          side: BorderSide(
+            color: color.withOpacity(0.5),
+            width: 1.5,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          shadowColor: color.withOpacity(0.4),
+        ).copyWith(
+          overlayColor: MaterialStateProperty.resolveWith(
+            (states) => color.withOpacity(0.1),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
