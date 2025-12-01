@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:audioplayers/audioplayers.dart';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
-import 'widgets/game_over_dialog.dart';
+import 'widgets/game_over_menu.dart';
 
 // Configuración de generación
 const double carWidth = 120;
@@ -44,20 +45,13 @@ class _GameScreenState extends State<GameScreen>
 
   // Estado del juego
   double _fuel = 100.0;
-  int _tires = 4; // Llantas (vidas) - inicia en 4
+  int _tires = 3; // Llantas (vidas) - inicia en 4
   int _score = 0; // Puntuación
   int _coins = 0; // Monedas recolectadas
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
   double _carXOffset = 0.0;
-
-  void _resumeGame() {
-    setState(() {
-      _isPaused = false;
-    });
-    _gameLoopController.repeat();
-  }
 
   /// Genera objetos aleatoriamente en la carretera
   void _spawnGameObject() {
@@ -95,14 +89,25 @@ class _GameScreenState extends State<GameScreen>
 
   /// Retorna un tipo de objeto aleatorio
   String _getRandomObject() {
-    final List<String> objects = [
-      'assets/objects/coin.png',
-      'assets/objects/rock.png',
-      'assets/objects/rock_large.png',
-      'assets/objects/gas.png',
-    ];
+    final double roll = _random.nextDouble();
 
-    return objects[_random.nextInt(objects.length)];
+    // Probabilidades:
+    // 0.00 - 0.01: Llanta (1%) - Muy raro
+    // 0.01 - 0.11: Gasolina (10%) - Raro
+    // 0.11 - 0.41: Moneda (30%)
+    // 0.41 - 1.00: Roca (59%)
+
+    if (roll < 0.01) {
+      return 'assets/objects/tire.png';
+    } else if (roll < 0.11) {
+      return 'assets/objects/gas.png';
+    } else if (roll < 0.41) {
+      return 'assets/objects/coin.png';
+    } else {
+      return _random.nextBool()
+          ? 'assets/objects/rock.png'
+          : 'assets/objects/rock_large.png';
+    }
   }
 
   /// Actualiza la posición de los objetos
@@ -181,21 +186,40 @@ class _GameScreenState extends State<GameScreen>
         if (obj.asset == 'assets/objects/gas.png') {
           // Si es gas, sumar 30 a fuel
           _fuel = (_fuel + 30).clamp(0, 100); // Max 100
+          _playSound('gas_fx.mp3');
         } else if (obj.asset == 'assets/objects/coin.png') {
           // Si es moneda, sumar 1 al contador de monedas
           _coins += 1;
+          _playSound('coin_fx.mp3');
+        } else if (obj.asset == 'assets/objects/tire.png') {
+          // Si es llanta, sumar 1 vida
+          _tires += 1;
+          _playSound('tire_fx.mp3'); // Usar sonido de moneda por ahora
         } else if (obj.asset == 'assets/objects/rock.png' ||
             obj.asset == 'assets/objects/rock_large.png') {
           // Si es roca, restar 1 llanta
           _tires -= 1;
-          if (_tires <= 0) {
-            _isGameOver = true;
-          }
+          _playSound('crash_fx.mp3');
+          // No establecer _isGameOver = true aquí, dejar que _onGameLoopTick lo maneje
         }
 
         // Eliminar el objeto
         _gameObjects.removeAt(i);
       }
+    }
+  }
+
+  Future<void> _playSound(String fileName) async {
+    try {
+      // Crear un nuevo player para cada sonido para permitir superposición (overlapping)
+      final player = AudioPlayer();
+      await player.play(AssetSource('sfx/$fileName'));
+      // Liberar recursos cuando termine de reproducir
+      player.onPlayerComplete.listen((_) {
+        player.dispose();
+      });
+    } catch (e) {
+      debugPrint("Error playing sound: $e");
     }
   }
 
@@ -235,6 +259,14 @@ class _GameScreenState extends State<GameScreen>
     _gameLoopController.stop();
   }
 
+  /// Resume el juego, reanuda el bucle
+  void _resumeGame() {
+    setState(() {
+      _isPaused = false;
+    });
+    _gameLoopController.repeat();
+  }
+
   /// Reinicia el juego, resetea los valores y vuelve a iniciar el bucle
   void _restartGame() {
     setState(() {
@@ -244,7 +276,8 @@ class _GameScreenState extends State<GameScreen>
       _isGameOver = false;
     });
     _gameLoopController.reset();
-    _gameLoopController.forward();
+    _gameLoopController.repeat();
+    _gameObjects.clear();
     _isPaused = false;
   }
 
@@ -266,11 +299,16 @@ class _GameScreenState extends State<GameScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return GameOverDialog(
+        return GameOverMenu(
           reason: reason,
           score: _score,
           onReturnToMenu: () {
-            Navigator.of(context).pop(); // Volver al menú
+            Navigator.of(context).pop();
+            Navigator.of(context).pop();
+          },
+          onRestart: () {
+            Navigator.of(context).pop();
+            _restartGame();
           },
         );
       },
