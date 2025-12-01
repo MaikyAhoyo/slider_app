@@ -41,8 +41,9 @@ class _GameScreenState extends State<GameScreen>
 
   // Estado del juego
   double _fuel = 100.0;
-  int _tires = 3;
-  int _score = 0;
+  int _tires = 4; // Llantas (vidas) - inicia en 4
+  int _score = 0; // Puntuación
+  int _coins = 0; // Monedas recolectadas
   bool _isGameOver = false;
 
   /// Genera objetos aleatoriamente en la carretera
@@ -142,8 +143,9 @@ class _GameScreenState extends State<GameScreen>
     // Posición del carro (aproximada, al centro abajo)
     final double carScreenX = screenWidth / 2;
     final double carScreenY = screenHeight - 100;
-    final double carHitboxWidth = carWidth;
-    final double carHitboxHeight = 70;
+    // Hitbox reducida: 70% del ancho del carro y 60% del alto
+    final double carHitboxWidth = carWidth * 0.7;
+    final double carHitboxHeight = 70 * 0.6;
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
       final GameObject obj = _gameObjects[i];
@@ -152,15 +154,29 @@ class _GameScreenState extends State<GameScreen>
       final double objScreenX = (screenWidth / 2) + obj.x;
       final double objScreenY = obj.y;
 
+      // Hitbox reducida de los objetos: 70% del ancho y 70% del alto
+      final double objHitboxWidth = obj.width * 0.7;
+      final double objHitboxHeight = obj.height * 0.7;
+
       // Detectar colisión (simple AABB collision)
-      if (carScreenX - carHitboxWidth / 2 < objScreenX + obj.width / 2 &&
-          carScreenX + carHitboxWidth / 2 > objScreenX - obj.width / 2 &&
-          carScreenY < objScreenY + obj.height &&
+      if (carScreenX - carHitboxWidth / 2 < objScreenX + objHitboxWidth / 2 &&
+          carScreenX + carHitboxWidth / 2 > objScreenX - objHitboxWidth / 2 &&
+          carScreenY < objScreenY + objHitboxHeight &&
           carScreenY + carHitboxHeight > objScreenY) {
         // Hay colisión
         if (obj.asset == 'assets/objects/gas.png') {
           // Si es gas, sumar 30 a fuel
           _fuel = (_fuel + 30).clamp(0, 100); // Max 100
+        } else if (obj.asset == 'assets/objects/coin.png') {
+          // Si es moneda, sumar 1 al contador de monedas
+          _coins += 1;
+        } else if (obj.asset == 'assets/objects/rock.png' ||
+            obj.asset == 'assets/objects/rock_large.png') {
+          // Si es roca, restar 1 llanta
+          _tires -= 1;
+          if (_tires <= 0) {
+            _isGameOver = true;
+          }
         }
 
         // Eliminar el objeto
@@ -191,9 +207,9 @@ class _GameScreenState extends State<GameScreen>
       if (_fuel <= 0) {
         _endGame("¡Sin gasolina!");
       }
-      // if (_tires <= 0) {
-      //   _endGame("¡Sin llantas!");
-      // }
+      if (_tires <= 0) {
+        _endGame("¡Sin llantas!");
+      }
     });
   }
 
@@ -275,6 +291,24 @@ class _GameScreenState extends State<GameScreen>
             );
           }).toList(),
 
+          // DEBUG: Hitbox de los objetos
+          ..._gameObjects.map((obj) {
+            final double posX = (screenWidth / 2) + obj.x;
+            final double hitboxWidth = obj.width * 0.7;
+            final double hitboxHeight = obj.height * 0.7;
+            return Positioned(
+              left: posX - (hitboxWidth / 2),
+              top: obj.y,
+              child: Container(
+                width: hitboxWidth,
+                height: hitboxHeight,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 2),
+                ),
+              ),
+            );
+          }).toList(),
+
           // 4. El carro (tu widget)
           Align(
             alignment: Alignment.bottomCenter,
@@ -284,6 +318,19 @@ class _GameScreenState extends State<GameScreen>
                 imagePath: widget.carAssetPath,
                 width: carWidth,
                 height: 70,
+              ),
+            ),
+          ),
+
+          // DEBUG: Hitbox del carro
+          Positioned(
+            left: (screenWidth / 2) - (carWidth * 0.7 / 2),
+            bottom: 20,
+            child: Container(
+              width: carWidth * 0.7,
+              height: 70 * 0.6,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red, width: 2),
               ),
             ),
           ),
@@ -306,14 +353,20 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Puntuación
-          Text(
-            'Puntos: $_score',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          // Monedas
+          Row(
+            children: [
+              const Text('🪙', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 5),
+              Text(
+                '$_coins',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
 
           // Llantas

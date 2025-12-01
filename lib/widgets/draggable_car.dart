@@ -14,11 +14,15 @@ class DraggableCar extends StatefulWidget {
   /// Alto del carro
   final double height;
 
+  /// Callback para notificar la posición del carro
+  final Function(double xPosition)? onPositionChanged;
+
   const DraggableCar({
     super.key,
     required this.imagePath,
     this.width = 100,
     this.height = 60,
+    this.onPositionChanged,
   });
 
   @override
