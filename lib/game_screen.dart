@@ -189,7 +189,7 @@ class _GameScreenState extends State<GameScreen>
           _playSound('gas_fx.mp3');
         } else if (obj.asset == 'assets/objects/coin.png') {
           // Si es moneda, sumar 1 al contador de monedas
-          _coins += 1;
+          _coins += 100;
           _playSound('coin_fx.mp3');
         } else if (obj.asset == 'assets/objects/tire.png') {
           // Si es llanta, sumar 1 vida
@@ -272,7 +272,7 @@ class _GameScreenState extends State<GameScreen>
     setState(() {
       _fuel = 100.0;
       _tires = 3;
-      _score = 0;
+      _coins = 0;
       _isGameOver = false;
     });
     _gameLoopController.reset();
@@ -291,7 +291,7 @@ class _GameScreenState extends State<GameScreen>
     // Guardar la puntuación en Supabase
     //widget.supabaseService.checkAndUpsertPlayer(
     //  playerName: widget.playerName,
-    //  score: _score,
+    //  score: _coins,
     //);
 
     // Muestra el diálogo de Game Over
@@ -301,7 +301,7 @@ class _GameScreenState extends State<GameScreen>
       builder: (context) {
         return GameOverMenu(
           reason: reason,
-          score: _score,
+          score: _coins,
           onReturnToMenu: () {
             Navigator.of(context).pop();
             Navigator.of(context).pop();
