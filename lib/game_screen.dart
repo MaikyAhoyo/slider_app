@@ -4,6 +4,9 @@ import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
+import 'widgets/game_over_dialog.dart';
+
+import 'widgets/settings_menu.dart';
 
 // Configuración de generación
 const double carWidth = 120;
@@ -258,25 +261,19 @@ class _GameScreenState extends State<GameScreen>
     //);
 
     // Muestra el diálogo de Game Over
-    showDialog(
-      context: context,
-      barrierDismissible: false, // El usuario no puede cerrar el diálogo
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('¡Juego Terminado!'),
-          content: Text('$reason\nPuntuación final: $_score'),
-          actions: [
-            TextButton(
-              child: const Text('Volver al Menú'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Cierra el diálogo
-                Navigator.of(context).pop(); // Vuelve a la pantalla de menú
-              },
-            ),
-          ],
-        );
-      },
-    );
+     showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return GameOverDialog(
+        reason: reason,
+        score: _score,
+        onReturnToMenu: () {
+          Navigator.of(context).pop(); // Volver al menú
+        },
+      );
+    },
+  );
   }
 
   @override
@@ -437,7 +434,7 @@ class _GameScreenState extends State<GameScreen>
           // Llantas
           Row(
             children: [
-              Icon(Icons.tire_repair, color: Colors.white),
+              const Icon(Icons.tire_repair, color: Colors.white),
               const SizedBox(width: 5),
               Text(
                 '$_tires',
@@ -453,7 +450,7 @@ class _GameScreenState extends State<GameScreen>
           // Gasolina
           Row(
             children: [
-              Icon(Icons.local_gas_station, color: Colors.white),
+              const Icon(Icons.local_gas_station, color: Colors.white),
               const SizedBox(width: 5),
               // Barra de progreso para la gasolina
               SizedBox(
