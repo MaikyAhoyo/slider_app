@@ -3,6 +3,8 @@ import 'dart:math';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
+import 'widgets/game_over_dialog.dart';
+
 
 // Configuración de generación
 const double carWidth = 120;
@@ -201,25 +203,19 @@ class _GameScreenState extends State<GameScreen>
     //);
 
     // Muestra el diálogo de Game Over
-    showDialog(
-      context: context,
-      barrierDismissible: false, // El usuario no puede cerrar el diálogo
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('¡Juego Terminado!'),
-          content: Text('$reason\nPuntuación final: $_score'),
-          actions: [
-            TextButton(
-              child: const Text('Volver al Menú'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Cierra el diálogo
-                Navigator.of(context).pop(); // Vuelve a la pantalla de menú
-              },
-            ),
-          ],
-        );
-      },
-    );
+     showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return GameOverDialog(
+        reason: reason,
+        score: _score,
+        onReturnToMenu: () {
+          Navigator.of(context).pop(); // Volver al menú
+        },
+      );
+    },
+  );
   }
 
   @override
