@@ -3,6 +3,7 @@ import 'dart:math';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
+import 'widgets/settings_menu.dart';
 
 // Configuración de generación
 const double carWidth = 120;
@@ -46,6 +47,7 @@ class _GameScreenState extends State<GameScreen>
   int _score = 0; // Puntuación
   int _coins = 0; // Monedas recolectadas
   bool _isPaused = false;
+  bool _isSettings = false;
   bool _isGameOver = false;
   void _resumeGame() {
     setState(() {
@@ -367,12 +369,27 @@ class _GameScreenState extends State<GameScreen>
           // 5. Interfaz de Usuario (UI) en la parte superior
           Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
 
-          // 5. Menú de Pausa
-          if (_isPaused)
+          // 6. Menú de Pausa
+          if (_isPaused && !_isSettings)
             PauseMenu(
               onResume: _resumeGame,
               onRestart: _restartGame,
               onQuit: () => Navigator.of(context).pop(),
+              onSettings: () {
+                setState(() {
+                  _isSettings = true;
+                });
+              },
+            ),
+
+          // 7. Menú de Configuración
+          if (_isSettings)
+            SettingsMenu(
+              onBack: () {
+                setState(() {
+                  _isSettings = false;
+                });
+              },
             ),
         ],
       ),
@@ -390,7 +407,6 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-
           // Botón del menú de pausa
           IconButton(
             icon: const Icon(Icons.pause, color: Colors.white),
@@ -416,6 +432,7 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
             ],
+          ),
 
           // Llantas
           Row(

@@ -1,10 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'services/supabase_service.dart';
+import 'services/audio_manager.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'styles_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -19,7 +20,7 @@ class _MenuScreenState extends State<MenuScreen> {
 
   late final SupabaseService _supabaseService;
   String _selectedCarAsset = 'assets/cars/orange_car.png';
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioManager _audioManager = AudioManager.instance;
 
   @override
   void initState() {
@@ -39,24 +40,17 @@ class _MenuScreenState extends State<MenuScreen> {
 
   /// Función para reproducir la música en bucle con manejo de errores
   Future<void> _playMenuMusic() async {
-    try {
-      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.play(AssetSource('music/menu_theme.mp3'));
-      debugPrint("🎵 Música iniciada correctamente");
-    } catch (e) {
-      debugPrint("❌ ERROR DE AUDIO: No se pudo reproducir la música.");
-      debugPrint("Detalles del error: $e");
-    }
+    await _audioManager.playMusic('menu_theme');
   }
 
   /// Detiene la música (se llama al salir del menú)
   Future<void> _stopMenuMusic() async {
-    await _audioPlayer.stop();
+    await _audioManager.stopMusic();
   }
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    // No disponemos el AudioManager aquí porque es un singleton global
     super.dispose();
   }
 
@@ -79,7 +73,7 @@ class _MenuScreenState extends State<MenuScreen> {
               setState(() {
                 playerName = _controller.text.isNotEmpty
                     ? _controller.text
-                    : "Player";
+                    : "Jugador";
               });
               Navigator.pop(context);
             },
@@ -90,17 +84,16 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  // --- Función para abrir Configuración ---
-  void _openSettings() async {
+  // --- Función para abrir Estilos ---
+  void _openStyles() async {
     final newCar = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            SettingsScreen(currentCarAsset: _selectedCarAsset),
+        builder: (context) => StylesScreen(currentCarAsset: _selectedCarAsset),
       ),
     );
 
-    // Cuando volvemos de Configuración, comprobamos si se seleccionó un coche
+    // Cuando volvemos de Estilos, comprobamos si se seleccionó un coche
     if (newCar != null && newCar is String) {
       setState(() {
         _selectedCarAsset = newCar;
@@ -108,12 +101,23 @@ class _MenuScreenState extends State<MenuScreen> {
     }
   }
 
+  // --- Función para abrir Configuración ---
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+    );
+  }
+
+  // ... (Tus imports y variables de estado siguen igual) ...
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Fondo con imagen de carro
+          // 1. IMAGEN DE FONDO
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -123,125 +127,192 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ),
 
-          // Overlay con oscurecido
-          Container(color: Colors.black.withOpacity(0.4)),
+          // 2. DEGRADADO (Mejor que un color sólido)
+          // Esto oscurece solo la parte de abajo para que se lean los botones
+          // y deja la parte de arriba (el cielo) más clara.
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.3),
+                  Colors.black.withOpacity(0.8),
+                ],
+                stops: const [0.4, 0.7, 1.0],
+              ),
+            ),
+          ),
 
-          // Contenido
-          Center(
+          // 3. CONTENIDO SEGURO (SafeArea)
+          SafeArea(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // TÍTULO CON NEÓN
+                const SizedBox(height: 20),
+
+                // --- TÍTULO (Arriba) ---
                 Text(
                   "CAR RACERS",
                   style: TextStyle(
-                    fontSize: 52,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 48, // Un poco más ajustado
+                    fontStyle: FontStyle.italic, // Cursiva da velocidad
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
-                    letterSpacing: 4,
+                    letterSpacing: 2,
                     shadows: [
                       Shadow(
-                        blurRadius: 25,
-                        color: Colors.blueAccent.shade400,
+                        blurRadius: 20,
+                        color: Colors.blueAccent.shade700,
                         offset: const Offset(0, 0),
                       ),
                       Shadow(
-                        blurRadius: 40,
-                        color: Colors.redAccent.shade400,
+                        blurRadius: 10,
+                        color: Colors.redAccent.shade700,
                         offset: const Offset(0, 0),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                // ESPACIO FLEXIBLE
+                // Esto empuja el menú hacia abajo para que se vea el coche
+                const Spacer(),
 
-                // PANEL DE VIDRIO (glassmorphism)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(25),
-                      width: 280,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                // --- PANEL DE CONTROL (Abajo) ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(25),
+                        width: double.infinity, // Ocupa el ancho disponible
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4), // Vidrio oscuro
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Jugador: $playerName",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          ElevatedButton(
-                            onPressed: _changeName,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white70,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: const Text("Cambiar Nombre"),
-                          ),
-
-                          const SizedBox(height: 30),
-
-                          // BOTÓN PLAY GRANDE
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _stopMenuMusic();
-                              if (context.mounted) {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => GameScreen(
-                                      playerName: playerName,
-                                      supabaseService: _supabaseService,
-                                      carAssetPath: _selectedCarAsset,
-                                    ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 1. FILA DE JUGADOR (Nombre + Editar)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  playerName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                );
-                              }
-                              _playMenuMusic();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 40,
-                                vertical: 18,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+                                ),
+                                const SizedBox(width: 5),
+                                // Botón pequeño para editar
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blueAccent,
+                                    size: 20,
+                                  ),
+                                  onPressed: _changeName,
+                                  tooltip: "Cambiar nombre",
+                                ),
+                              ],
                             ),
-                            child: const Text(
-                              "JUGAR",
-                              style: TextStyle(fontSize: 24),
-                            ),
-                          ),
 
-                          const SizedBox(height: 15),
+                            const SizedBox(height: 20),
 
-                          TextButton(
-                            onPressed: _openSettings,
-                            child: const Text(
-                              "Configuración",
-                              style: TextStyle(color: Colors.white70),
+                            // 2. BOTÓN JUGAR (Gigante y llamativo)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  await _stopMenuMusic();
+                                  if (context.mounted) {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => GameScreen(
+                                          playerName: playerName,
+                                          supabaseService: _supabaseService,
+                                          carAssetPath: _selectedCarAsset,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  _playMenuMusic();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(
+                                    0xFFFF3B30,
+                                  ), // Rojo intenso estilo Ferrari
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  elevation: 10,
+                                  shadowColor: Colors.redAccent.withOpacity(
+                                    0.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "JUGAR",
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 2,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+
+                            const SizedBox(height: 25),
+
+                            // 3. BOTONES SECUNDARIOS (En fila)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Botón Estilos
+                                _buildMenuButton(
+                                  icon: Icons.palette_outlined,
+                                  label: "Estilos",
+                                  onPressed: _openStyles,
+                                ),
+                                // Línea divisoria
+                                Container(
+                                  height: 20,
+                                  width: 1,
+                                  color: Colors.white24,
+                                ),
+                                // Botón Configuración
+                                _buildMenuButton(
+                                  icon: Icons.settings_outlined,
+                                  label: "Ajustes",
+                                  onPressed: _openSettings,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -250,6 +321,30 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMenuButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(15),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white70, size: 28),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }

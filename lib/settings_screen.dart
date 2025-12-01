@@ -1,50 +1,52 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'services/audio_manager.dart';
 
-/// Define un modelo simple para un coche
-class CarOption {
-  final String name;
-  final String assetPath;
-
-  CarOption({required this.name, required this.assetPath});
-}
-
-/// Pantalla para que el usuario elija su coche
 class SettingsScreen extends StatefulWidget {
-  final String currentCarAsset;
-
-  const SettingsScreen({super.key, required this.currentCarAsset});
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late String _selectedCarAsset;
+  final AudioManager _audioManager = AudioManager.instance;
 
-  // Lista de coches disponibles
-  final List<CarOption> _carOptions = [
-    CarOption(name: 'Naranja Clásico', assetPath: 'assets/cars/orange_car.png'),
-    CarOption(name: 'Azul Veloz', assetPath: 'assets/cars/blue_car.png'),
-    CarOption(
-      name: 'Morado Deportivo',
-      assetPath: 'assets/cars/purple_green_car.png',
-    ),
-    CarOption(
-      name: 'Rojo Rayo',
-      assetPath: 'assets/cars/red_lightning_car.png',
-    ),
-  ];
+  double _masterVolume = 1.0;
+  double _musicVolume = 1.0;
+  double _sfxVolume = 1.0;
 
   @override
   void initState() {
     super.initState();
-    _selectedCarAsset = widget.currentCarAsset;
+    _masterVolume = _audioManager.masterVolume;
+    _musicVolume = _audioManager.musicVolume;
+    _sfxVolume = _audioManager.sfxVolume;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos el mismo fondo que el menú para consistencia
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           Container(
@@ -55,132 +57,194 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          // Overlay oscuro
-          Container(color: Colors.black.withOpacity(0.6)),
 
-          // Contenido
-          SafeArea(
-            child: Column(
-              children: [
-                // AppBar personalizada
-                AppBar(
-                  title: const Text(
-                    'Configuración',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      // Devuelve el coche seleccionado al menú
-                      Navigator.of(context).pop(_selectedCarAsset);
-                    },
-                  ),
-                ),
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(color: Colors.black.withOpacity(0.5)),
+          ),
 
-                // Título de la sección
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Elige tu coche',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                // Lista de coches
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _carOptions.length,
-                    itemBuilder: (context, index) {
-                      final car = _carOptions[index];
-                      final isSelected = car.assetPath == _selectedCarAsset;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
+          Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 25,
+                        vertical: 40,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade900.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.15),
+                          width: 1.5,
                         ),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedCarAsset = car.assetPath;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.redAccent.withOpacity(0.8)
-                                  : Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.redAccent
-                                    : Colors.white.withOpacity(0.2),
-                                width: 2,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                // Imagen del coche
-                                Image.asset(
-                                  car.assetPath,
-                                  width: 100,
-                                  height: 60,
-                                  fit: BoxFit.contain,
-                                  // Manejo de error si la imagen no carga
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 100,
-                                      height: 60,
-                                      color: Colors.grey[800],
-                                      child: const Icon(
-                                        Icons.error_outline,
-                                        color: Colors.white,
-                                      ),
-                                    );
-                                  },
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 40,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.equalizer_rounded,
+                            size: 50,
+                            color: Colors.white24,
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'CONFIGURACIÓN',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 20,
+                                  color: Colors.blueAccent,
+                                  offset: Offset(0, 0),
                                 ),
-                                const SizedBox(width: 20),
-                                // Nombre del coche
-                                Expanded(
-                                  child: Text(
-                                    car.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    softWrap: true,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const Spacer(),
-                                // Indicador de selección
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.white,
-                                  ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
+
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Ajustes de Audio",
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                              letterSpacing: 1,
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          _buildNeonSlider(
+                            label: "Volumen General",
+                            value: _masterVolume,
+                            icon: Icons.volume_up_rounded,
+                            activeColor: Colors.purpleAccent,
+                            onChanged: (val) {
+                              setState(() => _masterVolume = val);
+                              _audioManager.setMasterVolume(val);
+                            },
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          _buildNeonSlider(
+                            label: "Música",
+                            value: _musicVolume,
+                            icon: Icons.music_note_rounded,
+                            activeColor: Colors.cyanAccent,
+                            onChanged: (val) {
+                              setState(() => _musicVolume = val);
+                              _audioManager.setMusicVolume(val);
+                            },
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          _buildNeonSlider(
+                            label: "Efectos (SFX)",
+                            value: _sfxVolume,
+                            icon: Icons.graphic_eq_rounded,
+                            activeColor: Colors.orangeAccent,
+                            onChanged: (val) {
+                              setState(() => _sfxVolume = val);
+                              _audioManager.setSfxVolume(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNeonSlider({
+    required String label,
+    required double value,
+    required IconData icon,
+    required Color activeColor,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: activeColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: activeColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Text(
+              "${(value * 100).toInt()}%",
+              style: TextStyle(
+                color: activeColor,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 6.0,
+            trackShape: const RoundedRectSliderTrackShape(),
+            activeTrackColor: activeColor,
+            inactiveTrackColor: Colors.grey.shade800,
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 10.0,
+              pressedElevation: 8.0,
+            ),
+            thumbColor: Colors.white,
+            overlayColor: activeColor.withOpacity(0.2),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
+            tickMarkShape: const RoundSliderTickMarkShape(),
+            activeTickMarkColor: activeColor,
+            inactiveTickMarkColor: Colors.white70,
+          ),
+          child: Slider(value: value, onChanged: onChanged),
+        ),
+      ],
     );
   }
 }
