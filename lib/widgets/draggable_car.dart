@@ -45,22 +45,19 @@ class _DraggableCarState extends State<DraggableCar> {
         final minX = -maxWidth / 2 + carHalfWidth;
         final maxX = maxWidth / 2 - carHalfWidth;
 
-        return GestureDetector(
-          onPanUpdate: (details) {
-            setState(() {
-              // Actualiza la posición basándose en el delta del gesto
-              _xPosition += details.delta.dx;
-
-              // Asegura que el carro no salga de los límites
-              _xPosition = _xPosition.clamp(minX, maxX);
-            });
-          },
-          child: Container(
-            width: maxWidth,
-            height: widget.height + 20, // Espacio extra para padding
-            alignment: Alignment.center,
-            child: Transform.translate(
-              offset: Offset(_xPosition, 0),
+        return Container(
+          width: maxWidth,
+          height: widget.height + 20,
+          alignment: Alignment.center,
+          child: Transform.translate(
+            offset: Offset(_xPosition, 0),
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _xPosition += details.delta.dx;
+                  _xPosition = _xPosition.clamp(minX, maxX);
+                });
+              },
               child: Image.asset(
                 widget.imagePath,
                 width: widget.width,
@@ -109,30 +106,25 @@ class _DraggableCarHorizontalState extends State<DraggableCarHorizontal> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calcula los límites para que el carro no salga de la pantalla
         final maxHeight = constraints.maxHeight;
         final carHalfHeight = widget.height / 2;
 
-        // Limita la posición entre los bordes
         final minY = -maxHeight / 2 + carHalfHeight;
         final maxY = maxHeight / 2 - carHalfHeight;
 
-        return GestureDetector(
-          onPanUpdate: (details) {
-            setState(() {
-              // Actualiza la posición basándose en el delta del gesto
-              _yPosition += details.delta.dy;
-
-              // Asegura que el carro no salga de los límites
-              _yPosition = _yPosition.clamp(minY, maxY);
-            });
-          },
-          child: Container(
-            width: widget.width + 20, // Espacio extra para padding
-            height: maxHeight,
-            alignment: Alignment.center,
-            child: Transform.translate(
-              offset: Offset(0, _yPosition),
+        return Container(
+          width: widget.width + 20,
+          height: maxHeight,
+          alignment: Alignment.center,
+          child: Transform.translate(
+            offset: Offset(0, _yPosition),
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _yPosition += details.delta.dy;
+                  _yPosition = _yPosition.clamp(minY, maxY);
+                });
+              },
               child: Image.asset(
                 widget.imagePath,
                 width: widget.width,

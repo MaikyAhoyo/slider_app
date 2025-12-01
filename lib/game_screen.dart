@@ -386,7 +386,6 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-
           // Botón del menú de pausa
           IconButton(
             icon: const Icon(Icons.pause, color: Colors.white),
@@ -412,11 +411,12 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
             ],
+          ),
 
           // Llantas
           Row(
             children: [
-              Icon(Icons.tire_repair, color: Colors.white),
+              const Icon(Icons.tire_repair, color: Colors.white),
               const SizedBox(width: 5),
               Text(
                 '$_tires',
@@ -432,7 +432,7 @@ class _GameScreenState extends State<GameScreen>
           // Gasolina
           Row(
             children: [
-              Icon(Icons.local_gas_station, color: Colors.white),
+              const Icon(Icons.local_gas_station, color: Colors.white),
               const SizedBox(width: 5),
               // Barra de progreso para la gasolina
               SizedBox(
