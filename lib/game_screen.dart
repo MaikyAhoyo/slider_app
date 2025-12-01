@@ -6,6 +6,7 @@ import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
 import 'widgets/game_over_dialog.dart';
 
+import 'widgets/settings_menu.dart';
 
 // Configuración de generación
 const double carWidth = 120;
