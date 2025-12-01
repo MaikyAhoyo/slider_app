@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
+import 'widgets/pause_menu.dart';
 
 // Configuración de generación
 const double carWidth = 120;
@@ -44,7 +45,14 @@ class _GameScreenState extends State<GameScreen>
   int _tires = 4; // Llantas (vidas) - inicia en 4
   int _score = 0; // Puntuación
   int _coins = 0; // Monedas recolectadas
+  bool _isPaused = false;
   bool _isGameOver = false;
+  void _resumeGame() {
+    setState(() {
+      _isPaused = false;
+    });
+    _gameLoopController.repeat();
+  }
 
   /// Genera objetos aleatoriamente en la carretera
   void _spawnGameObject() {
@@ -213,6 +221,27 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
+  /// Pausa el juego, detiene el bucle
+  void _pauseGame() {
+    setState(() {
+      _isPaused = true;
+    });
+    _gameLoopController.stop();
+  }
+
+  /// Reinicia el juego, resetea los valores y vuelve a iniciar el bucle
+  void _restartGame() {
+    setState(() {
+      _fuel = 100.0;
+      _tires = 3;
+      _score = 0;
+      _isGameOver = false;
+    });
+    _gameLoopController.reset();
+    _gameLoopController.forward();
+    _isPaused = false;
+  }
+
   /// Termina el juego, detiene el bucle y muestra el diálogo
   void _endGame(String reason) {
     if (_isGameOver) return; // Evita llamar esto múltiples veces
@@ -337,12 +366,20 @@ class _GameScreenState extends State<GameScreen>
 
           // 5. Interfaz de Usuario (UI) en la parte superior
           Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
+
+          // 5. Menú de Pausa
+          if (_isPaused)
+            PauseMenu(
+              onResume: _resumeGame,
+              onRestart: _restartGame,
+              onQuit: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );
   }
 
-  /// Construye la UI del juego (Puntos, Gasolina, Llantas)
+  /// Construye la UI del juego (Pausa, Puntos, Gasolina, Llantas)
   Widget _buildGameUI() {
     return Container(
       padding: const EdgeInsets.all(10.0),
@@ -353,6 +390,18 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+
+          // Botón del menú de pausa
+          IconButton(
+            icon: const Icon(Icons.pause, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isPaused = !_isPaused;
+              });
+              _pauseGame();
+            },
+          ),
+
           // Monedas
           Row(
             children: [
@@ -367,7 +416,6 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
             ],
-          ),
 
           // Llantas
           Row(
