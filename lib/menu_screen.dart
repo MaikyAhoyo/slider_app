@@ -1,12 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-
-// --- IMPORTACIONES AÑADIDAS ---
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'services/supabase_service.dart';
 import 'game_screen.dart';
-import 'settings_screen.dart'; // <-- Importar la nueva pantalla
-// ------------------------------
+import 'settings_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -16,30 +14,51 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  String playerName = "Player";
+  String playerName = "Jugador";
   final TextEditingController _controller = TextEditingController();
 
-  // --- LÓGICA DE SUPABASE Y COCHE ---
   late final SupabaseService _supabaseService;
-  String _selectedCarAsset = 'assets/cars/orange_car.png'; // Coche por defecto
+  String _selectedCarAsset = 'assets/cars/orange_car.png';
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
-    _supabaseService = SupabaseService(); // Inicializa el servicio
+    _supabaseService = SupabaseService();
     _controller.text = playerName;
-    _signIn(); // Inicia sesión al entrar al menú
+    _signIn();
+    _playMenuMusic();
   }
 
-  /// Inicia sesión con las credenciales del .env
   Future<void> _signIn() async {
-    // Asegúrate de tener las variables en tu .env
     await _supabaseService.signIn(
       email: dotenv.env['AUTH_EMAIL']!,
       password: dotenv.env['AUTH_PASSWORD']!,
     );
   }
-  // ------------------------------------
+
+  /// Función para reproducir la música en bucle con manejo de errores
+  Future<void> _playMenuMusic() async {
+    try {
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.play(AssetSource('music/menu_theme.mp3'));
+      debugPrint("🎵 Música iniciada correctamente");
+    } catch (e) {
+      debugPrint("❌ ERROR DE AUDIO: No se pudo reproducir la música.");
+      debugPrint("Detalles del error: $e");
+    }
+  }
+
+  /// Detiene la música (se llama al salir del menú)
+  Future<void> _stopMenuMusic() async {
+    await _audioPlayer.stop();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
 
   void _changeName() {
     showDialog(
@@ -180,18 +199,21 @@ class _MenuScreenState extends State<MenuScreen> {
 
                           // BOTÓN PLAY GRANDE
                           ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => GameScreen(
-                                    playerName: playerName,
-                                    supabaseService: _supabaseService,
-                                    // Pasa el coche seleccionado
-                                    carAssetPath: _selectedCarAsset,
+                            onPressed: () async {
+                              await _stopMenuMusic();
+                              if (context.mounted) {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => GameScreen(
+                                      playerName: playerName,
+                                      supabaseService: _supabaseService,
+                                      carAssetPath: _selectedCarAsset,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              }
+                              _playMenuMusic();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.redAccent,
@@ -213,7 +235,6 @@ class _MenuScreenState extends State<MenuScreen> {
                           const SizedBox(height: 15),
 
                           TextButton(
-                            // Llama a la nueva función
                             onPressed: _openSettings,
                             child: const Text(
                               "Configuración",
