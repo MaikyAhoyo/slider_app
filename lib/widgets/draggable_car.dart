@@ -65,7 +65,7 @@ class _DraggableCarState extends State<DraggableCar> {
                 widget.imagePath,
                 width: widget.width,
                 height: widget.height,
-                fit: BoxFit.contain,
+                fit: BoxFit.fill,
               ),
             ),
           ),

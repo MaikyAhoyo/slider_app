@@ -6,8 +6,6 @@ import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
 import 'widgets/game_over_dialog.dart';
 
-import 'widgets/settings_menu.dart';
-
 // Configuración de generación
 const double carWidth = 120;
 const double roadWidth = carWidth * 4;
@@ -52,6 +50,8 @@ class _GameScreenState extends State<GameScreen>
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
+  double _carXOffset = 0.0;
+
   void _resumeGame() {
     setState(() {
       _isPaused = false;
@@ -131,8 +131,8 @@ class _GameScreenState extends State<GameScreen>
       screenHeight = size.height;
       // Carretera toma 80% del ancho de pantalla
       roadWidth = screenWidth * 0.8;
-      // Carro es 1/4 del ancho de la carretera
-      carWidth = roadWidth / 4;
+      // Carro es 35px de ancho
+      carWidth = 35;
 
       setState(() {});
     });
@@ -154,11 +154,12 @@ class _GameScreenState extends State<GameScreen>
   /// Detecta colisiones entre el carro y los objetos
   void _checkCollisions() {
     // Posición del carro (aproximada, al centro abajo)
-    final double carScreenX = screenWidth / 2;
+    final double carScreenX = (screenWidth / 2) + _carXOffset;
     final double carScreenY = screenHeight - 100;
-    // Hitbox reducida: 70% del ancho del carro y 60% del alto
-    final double carHitboxWidth = carWidth * 0.7;
-    final double carHitboxHeight = 70 * 0.6;
+
+    // Hitbox completa: usar el tamaño real del carro
+    final double carHitboxWidth = carWidth;
+    final double carHitboxHeight = 70;
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
       final GameObject obj = _gameObjects[i];
@@ -167,9 +168,9 @@ class _GameScreenState extends State<GameScreen>
       final double objScreenX = (screenWidth / 2) + obj.x;
       final double objScreenY = obj.y;
 
-      // Hitbox reducida de los objetos: 70% del ancho y 70% del alto
-      final double objHitboxWidth = obj.width * 0.7;
-      final double objHitboxHeight = obj.height * 0.7;
+      // Hitbox completa de los objetos
+      final double objHitboxWidth = obj.width;
+      final double objHitboxHeight = obj.height;
 
       // Detectar colisión (simple AABB collision)
       if (carScreenX - carHitboxWidth / 2 < objScreenX + objHitboxWidth / 2 &&
@@ -261,19 +262,19 @@ class _GameScreenState extends State<GameScreen>
     //);
 
     // Muestra el diálogo de Game Over
-     showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return GameOverDialog(
-        reason: reason,
-        score: _score,
-        onReturnToMenu: () {
-          Navigator.of(context).pop(); // Volver al menú
-        },
-      );
-    },
-  );
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return GameOverDialog(
+          reason: reason,
+          score: _score,
+          onReturnToMenu: () {
+            Navigator.of(context).pop(); // Volver al menú
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -346,19 +347,24 @@ class _GameScreenState extends State<GameScreen>
                 imagePath: widget.carAssetPath,
                 width: carWidth,
                 height: 70,
+                onPositionChanged: (value) {
+                  _carXOffset = value;
+                },
               ),
             ),
           ),
 
           // DEBUG: Hitbox del carro
           Positioned(
-            left: (screenWidth / 2) - (carWidth * 0.7 / 2),
+            left: (screenWidth / 2) + _carXOffset - (carWidth / 2),
             bottom: 20,
-            child: Container(
-              width: carWidth * 0.7,
-              height: 70 * 0.6,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red, width: 2),
+            child: IgnorePointer(
+              child: Container(
+                width: carWidth,
+                height: 70,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.red, width: 2),
+                ),
               ),
             ),
           ),
