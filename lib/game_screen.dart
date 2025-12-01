@@ -34,6 +34,8 @@ class _GameScreenState extends State<GameScreen>
   // Configuración de generación (variables dinámicas)
   late double carWidth;
   late double roadWidth;
+  late double screenWidth;
+  late double screenHeight;
   static const double spawnRate =
       0.02; // Probabilidad de generar objeto por tick
 
@@ -110,7 +112,9 @@ class _GameScreenState extends State<GameScreen>
     // Usar addPostFrameCallback para esperar a que el widget esté listo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Calcular dinámicamente el tamaño del carro basado en el ancho de pantalla
-      final screenWidth = MediaQuery.of(context).size.width;
+      final size = MediaQuery.of(context).size;
+      screenWidth = size.width;
+      screenHeight = size.height;
       // Carretera toma 80% del ancho de pantalla
       roadWidth = screenWidth * 0.8;
       // Carro es 1/4 del ancho de la carretera
@@ -133,6 +137,38 @@ class _GameScreenState extends State<GameScreen>
     _gameLoopController.repeat();
   }
 
+  /// Detecta colisiones entre el carro y los objetos
+  void _checkCollisions() {
+    // Posición del carro (aproximada, al centro abajo)
+    final double carScreenX = screenWidth / 2;
+    final double carScreenY = screenHeight - 100;
+    final double carHitboxWidth = carWidth;
+    final double carHitboxHeight = 70;
+
+    for (var i = _gameObjects.length - 1; i >= 0; i--) {
+      final GameObject obj = _gameObjects[i];
+
+      // Posición del objeto en pantalla
+      final double objScreenX = (screenWidth / 2) + obj.x;
+      final double objScreenY = obj.y;
+
+      // Detectar colisión (simple AABB collision)
+      if (carScreenX - carHitboxWidth / 2 < objScreenX + obj.width / 2 &&
+          carScreenX + carHitboxWidth / 2 > objScreenX - obj.width / 2 &&
+          carScreenY < objScreenY + obj.height &&
+          carScreenY + carHitboxHeight > objScreenY) {
+        // Hay colisión
+        if (obj.asset == 'assets/objects/gas.png') {
+          // Si es gas, sumar 30 a fuel
+          _fuel = (_fuel + 30).clamp(0, 100); // Max 100
+        }
+
+        // Eliminar el objeto
+        _gameObjects.removeAt(i);
+      }
+    }
+  }
+
   /// Este es el corazón del juego, se llama ~60 veces por segundo
   void _onGameLoopTick() {
     if (_isGameOver) return;
@@ -148,7 +184,10 @@ class _GameScreenState extends State<GameScreen>
       // 3. Actualizar posición de objetos
       _updateGameObjects();
 
-      // 4. Comprobar condiciones de Game Over
+      // 4. Detectar colisiones
+      _checkCollisions();
+
+      // 5. Comprobar condiciones de Game Over
       if (_fuel <= 0) {
         _endGame("¡Sin gasolina!");
       }
