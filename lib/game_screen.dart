@@ -199,8 +199,7 @@ class _GameScreenState extends State<GameScreen>
             obj.asset == 'assets/objects/rock_large.png') {
           // Si es roca, restar 1 llanta
           _tires -= 1;
-          _playSound('crash_fx.mp3');
-          // No establecer _isGameOver = true aquí, dejar que _onGameLoopTick lo maneje
+          _playSound('crash_sfx.mp3');
         }
 
         // Eliminar el objeto
