@@ -56,6 +56,9 @@ class _DraggableCarState extends State<DraggableCar> {
                 setState(() {
                   _xPosition += details.delta.dx;
                   _xPosition = _xPosition.clamp(minX, maxX);
+
+                  // Notificar el cambio de posición
+                  widget.onPositionChanged?.call(_xPosition);
                 });
               },
               child: Image.asset(
