@@ -66,6 +66,7 @@ class _GameScreenState extends State<GameScreen>
 
       // 3. Lógica futura:
       // - Mover obstáculos y monedas hacia abajo
+
       // - Comprobar colisiones (carro vs obstáculo, carro vs moneda)
       // - Actualizar puntuación si recoge moneda
       // - Reducir llantas si choca
@@ -145,6 +146,10 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Ancho del carro y carretera
+    const double carWidth = 120;
+    // final double roadWidth = carWidth * 4;
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -156,6 +161,7 @@ class _GameScreenState extends State<GameScreen>
           Align(
             alignment: Alignment.center,
             child: Container(
+              // width: roadWidth,
               width: MediaQuery.of(context).size.width * 0.8,
               color: Colors.grey[700],
               // Aquí podrías añadir un CustomPaint para dibujar las líneas de la carretera
@@ -169,7 +175,7 @@ class _GameScreenState extends State<GameScreen>
               padding: const EdgeInsets.only(bottom: 20.0),
               child: DraggableCar(
                 imagePath: widget.carAssetPath,
-                width: 120,
+                width: carWidth,
                 height: 70,
               ),
             ),
