@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'services/supabase_service.dart';
 import 'widgets/draggable_car.dart';
+
+// Configuración de generación
+const double carWidth = 120;
+const double roadWidth = carWidth * 4;
 
 class GameScreen extends StatefulWidget {
   final String playerName;
@@ -21,6 +26,16 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _gameLoopController;
+  final Random _random = Random();
+
+  // Lista de objetos en la carretera
+  final List<GameObject> _gameObjects = [];
+
+  // Configuración de generación (variables dinámicas)
+  late double carWidth;
+  late double roadWidth;
+  static const double spawnRate =
+      0.02; // Probabilidad de generar objeto por tick
 
   // Estado del juego
   double _fuel = 100.0;
@@ -28,9 +43,81 @@ class _GameScreenState extends State<GameScreen>
   int _score = 0;
   bool _isGameOver = false;
 
+  /// Genera objetos aleatoriamente en la carretera
+  void _spawnGameObject() {
+    if (_random.nextDouble() < spawnRate) {
+      final String randomObject = _getRandomObject();
+
+      // Determinar el tamaño según el tipo de objeto
+      double width = 50;
+      double height = 50;
+
+      if (randomObject == 'assets/objects/rock_large.png') {
+        // Rock large tiene el doble de ancho, mismo largo
+        width = 100;
+        height = 50;
+      }
+
+      // Generar SOLO dentro del ancho de la carretera
+      // Considerar el ancho del objeto para no salir de la carretera
+      final double halfRoadWidth = roadWidth / 2;
+      final double minX = -(halfRoadWidth - width / 2);
+      final double maxX = halfRoadWidth - width / 2;
+      final double randomX = minX + _random.nextDouble() * (maxX - minX);
+
+      _gameObjects.add(
+        GameObject(
+          x: randomX,
+          y: -100,
+          asset: randomObject,
+          width: width,
+          height: height,
+        ),
+      );
+    }
+  }
+
+  /// Retorna un tipo de objeto aleatorio
+  String _getRandomObject() {
+    final List<String> objects = [
+      'assets/objects/coin.png',
+      'assets/objects/rock.png',
+      'assets/objects/rock_large.png',
+      'assets/objects/gas.png',
+    ];
+
+    return objects[_random.nextInt(objects.length)];
+  }
+
+  /// Actualiza la posición de los objetos
+  void _updateGameObjects() {
+    final double screenHeight = MediaQuery.of(context).size.height;
+
+    for (var i = _gameObjects.length - 1; i >= 0; i--) {
+      _gameObjects[i].y += 5; // Velocidad de caída
+
+      // Elimina objetos que salieron de la pantalla
+      if (_gameObjects[i].y > screenHeight) {
+        _gameObjects.removeAt(i);
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+
+    // Usar addPostFrameCallback para esperar a que el widget esté listo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Calcular dinámicamente el tamaño del carro basado en el ancho de pantalla
+      final screenWidth = MediaQuery.of(context).size.width;
+      // Carretera toma 80% del ancho de pantalla
+      roadWidth = screenWidth * 0.8;
+      // Carro es 1/4 del ancho de la carretera
+      carWidth = roadWidth / 4;
+
+      setState(() {});
+    });
 
     _gameLoopController = AnimationController(
       vsync: this,
@@ -53,15 +140,13 @@ class _GameScreenState extends State<GameScreen>
     // setState() le dice a Flutter que redibuje la pantalla con los nuevos valores
     setState(() {
       // 1. Reducir la gasolina
-      // Ajusta este valor para que se consuma más rápido o más lento
-      _fuel -= 0.05; // Ejemplo: reduce la gasolina lentamente
+      _fuel -= 0.05;
 
-      // 3. Lógica futura:
-      // - Mover obstáculos y monedas hacia abajo
+      // 2. Generar objetos aleatoriamente
+      _spawnGameObject();
 
-      // - Comprobar colisiones (carro vs obstáculo, carro vs moneda)
-      // - Actualizar puntuación si recoge moneda
-      // - Reducir llantas si choca
+      // 3. Actualizar posición de objetos
+      _updateGameObjects();
 
       // 4. Comprobar condiciones de Game Over
       if (_fuel <= 0) {
@@ -117,9 +202,7 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Ancho del carro y carretera
-    const double carWidth = 120;
-    // final double roadWidth = carWidth * 4;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: Stack(
@@ -132,14 +215,28 @@ class _GameScreenState extends State<GameScreen>
           Align(
             alignment: Alignment.center,
             child: Container(
-              // width: roadWidth,
-              width: MediaQuery.of(context).size.width * 0.8,
+              width: roadWidth,
               color: Colors.grey[700],
               // Aquí podrías añadir un CustomPaint para dibujar las líneas de la carretera
             ),
           ),
 
-          // 3. El carro (tu widget)
+          // 3. Objetos del juego
+          ..._gameObjects.map((obj) {
+            final double posX = (screenWidth / 2) + obj.x;
+            return Positioned(
+              left: posX - (obj.width / 2),
+              top: obj.y,
+              child: Image.asset(
+                obj.asset,
+                width: obj.width,
+                height: obj.height,
+                fit: BoxFit.contain,
+              ),
+            );
+          }).toList(),
+
+          // 4. El carro (tu widget)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -152,7 +249,7 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
-          // 4. Interfaz de Usuario (UI) en la parte superior
+          // 5. Interfaz de Usuario (UI) en la parte superior
           Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
         ],
       ),
@@ -220,4 +317,21 @@ class _GameScreenState extends State<GameScreen>
       ),
     );
   }
+}
+
+/// Clase para representar un objeto en el juego
+class GameObject {
+  double x;
+  double y;
+  String asset;
+  double width;
+  double height;
+
+  GameObject({
+    required this.x,
+    required this.y,
+    required this.asset,
+    required this.width,
+    required this.height,
+  });
 }
