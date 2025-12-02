@@ -17,8 +17,11 @@ class AudioManager {
   final Map<String, String> _soundMap = {
     'menu_theme': 'music/menu_theme.mp3',
     'game_theme': 'music/game_theme.mp3',
-    'click': 'sfx/click.mp3',
     'game_over': 'sfx/game_over.mp3',
+    'gas_fx': 'sfx/gas_fx.mp3',
+    'coin_fx': 'sfx/coin_fx.mp3',
+    'tire_fx': 'sfx/tire_fx.mp3',
+    'crash_fx': 'sfx/crash_fx.mp3',
   };
 
   AudioManager._internal() {
@@ -82,8 +85,6 @@ class AudioManager {
     }
 
     try {
-      // Para SFX, a veces queremos solapamiento, así que creamos un player temporal o usamos uno dedicado si es simple
-      // Para este ejemplo simple, usamos _sfxPlayer. Si necesitas polifonía, crea uno nuevo.
       await _sfxPlayer.stop();
       await _sfxPlayer.setSource(AssetSource(path));
       await _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
@@ -93,7 +94,6 @@ class AudioManager {
     }
   }
 
-  // Método para registrar nuevos sonidos dinámicamente si es necesario
   void registerSound(String id, String assetPath) {
     _soundMap[id] = assetPath;
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'services/supabase_service.dart';
+import 'services/audio_manager.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
@@ -29,6 +29,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
+  final AudioManager _audioManager = AudioManager.instance;
   late AnimationController _gameLoopController;
   final Random _random = Random();
 
@@ -46,7 +47,6 @@ class _GameScreenState extends State<GameScreen>
   // Estado del juego
   double _fuel = 100.0;
   int _tires = 3; // Llantas (vidas) - inicia en 4
-  int _score = 0; // Puntuación
   int _coins = 0; // Monedas recolectadas
   bool _isPaused = false;
   bool _isSettings = false;
@@ -184,22 +184,18 @@ class _GameScreenState extends State<GameScreen>
           carScreenY + carHitboxHeight > objScreenY) {
         // Hay colisión
         if (obj.asset == 'assets/objects/gas.png') {
-          // Si es gas, sumar 30 a fuel
-          _fuel = (_fuel + 30).clamp(0, 100); // Max 100
-          _playSound('gas_fx.mp3');
+          _fuel = (_fuel + 30).clamp(0, 100);
+          _playSound('gas_fx');
         } else if (obj.asset == 'assets/objects/coin.png') {
-          // Si es moneda, sumar 1 al contador de monedas
           _coins += 100;
-          _playSound('coin_fx.mp3');
+          _playSound('coin_fx');
         } else if (obj.asset == 'assets/objects/tire.png') {
-          // Si es llanta, sumar 1 vida
           _tires += 1;
-          _playSound('tire_fx.mp3'); // Usar sonido de moneda por ahora
+          _playSound('tire_fx');
         } else if (obj.asset == 'assets/objects/rock.png' ||
             obj.asset == 'assets/objects/rock_large.png') {
-          // Si es roca, restar 1 llanta
           _tires -= 1;
-          _playSound('crash_sfx.mp3');
+          _playSound('crash_fx');
         }
 
         // Eliminar el objeto
@@ -208,18 +204,19 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  Future<void> _playSound(String fileName) async {
-    try {
-      // Crear un nuevo player para cada sonido para permitir superposición (overlapping)
-      final player = AudioPlayer();
-      await player.play(AssetSource('sfx/$fileName'));
-      // Liberar recursos cuando termine de reproducir
-      player.onPlayerComplete.listen((_) {
-        player.dispose();
-      });
-    } catch (e) {
-      debugPrint("Error playing sound: $e");
-    }
+  /// Función para reproducir la música en bucle
+  Future<void> _playMusic() async {
+    await _audioManager.playMusic('game_theme');
+  }
+
+  /// Detiene la música (se llama al salir del menú)
+  Future<void> _stopMusic() async {
+    await _audioManager.stopMusic();
+  }
+
+  /// Función para reproducir un sonido
+  Future<void> _playSound(String soundId) async {
+    await _audioManager.playSfx(soundId);
   }
 
   /// Este es el corazón del juego, se llama ~60 veces por segundo
