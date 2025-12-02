@@ -1,20 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Widget que muestra un carro arrastrable horizontalmente.
-///
-/// Permite al usuario mover el carro hacia la izquierda o derecha
-/// mediante gestos de arrastre (mouse o toque táctil).
 class DraggableCar extends StatefulWidget {
-  /// Ruta de la imagen del carro
   final String imagePath;
-
-  /// Ancho del carro
   final double width;
-
-  /// Alto del carro
   final double height;
-
-  /// Callback para notificar la posición del carro
   final Function(double xPosition)? onPositionChanged;
 
   const DraggableCar({
@@ -30,7 +19,6 @@ class DraggableCar extends StatefulWidget {
 }
 
 class _DraggableCarState extends State<DraggableCar> {
-  /// Posición horizontal del carro (offset desde el centro)
   double _xPosition = 0.0;
 
   @override
@@ -57,7 +45,6 @@ class _DraggableCarState extends State<DraggableCar> {
                   _xPosition += details.delta.dx;
                   _xPosition = _xPosition.clamp(minX, maxX);
 
-                  // Notificar el cambio de posición
                   widget.onPositionChanged?.call(_xPosition);
                 });
               },
@@ -75,26 +62,18 @@ class _DraggableCarState extends State<DraggableCar> {
   }
 }
 
-/// Widget que muestra un carro arrastrable verticalmente para el layout horizontal.
-///
-/// Permite al usuario mover el carro hacia arriba o abajo
-/// mediante gestos de arrastre (mouse o toque táctil).
-/// Se usa en la orientación horizontal de la aplicación.
 class DraggableCarHorizontal extends StatefulWidget {
-  /// Ruta de la imagen del carro
   final String imagePath;
-
-  /// Ancho del carro
   final double width;
-
-  /// Alto del carro
   final double height;
+  final Function(double yPosition)? onPositionChanged;
 
   const DraggableCarHorizontal({
     super.key,
     required this.imagePath,
     this.width = 60,
     this.height = 100,
+    this.onPositionChanged,
   });
 
   @override
@@ -102,7 +81,6 @@ class DraggableCarHorizontal extends StatefulWidget {
 }
 
 class _DraggableCarHorizontalState extends State<DraggableCarHorizontal> {
-  /// Posición vertical del carro (offset desde el centro)
   double _yPosition = 0.0;
 
   @override
@@ -126,13 +104,18 @@ class _DraggableCarHorizontalState extends State<DraggableCarHorizontal> {
                 setState(() {
                   _yPosition += details.delta.dy;
                   _yPosition = _yPosition.clamp(minY, maxY);
+
+                  widget.onPositionChanged?.call(_yPosition);
                 });
               },
-              child: Image.asset(
-                widget.imagePath,
-                width: widget.width,
-                height: widget.height,
-                fit: BoxFit.contain,
+              child: RotatedBox(
+                quarterTurns: 1,
+                child: Image.asset(
+                  widget.imagePath,
+                  width: widget.height,
+                  height: widget.width,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),

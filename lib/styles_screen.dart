@@ -20,7 +20,6 @@ class StylesScreen extends StatefulWidget {
 class _StylesScreenState extends State<StylesScreen> {
   late String _selectedCarAsset;
 
-  // Lista de coches disponibles
   final List<CarOption> _carOptions = [
     CarOption(name: 'Naranja Clásico', assetPath: 'assets/cars/orange_car.png'),
     CarOption(name: 'Azul Veloz', assetPath: 'assets/cars/blue_car.png'),
@@ -42,6 +41,9 @@ class _StylesScreenState extends State<StylesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
 
@@ -85,8 +87,14 @@ class _StylesScreenState extends State<StylesScreen> {
 
           Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 450),
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+              constraints: BoxConstraints(
+                maxWidth: isLandscape ? 700 : 450,
+                maxHeight: isLandscape ? size.height * 0.85 : double.infinity,
+              ),
+              margin: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: isLandscape ? 40 : 80,
+              ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(30),
                 child: BackdropFilter(
@@ -111,12 +119,14 @@ class _StylesScreenState extends State<StylesScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.directions_car_filled_rounded,
-                          size: 50,
-                          color: Colors.white24,
-                        ),
-                        const SizedBox(height: 10),
+                        if (!isLandscape) ...[
+                          const Icon(
+                            Icons.directions_car_filled_rounded,
+                            size: 50,
+                            color: Colors.white24,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                         const Text(
                           'GARAJE',
                           style: TextStyle(
@@ -143,23 +153,41 @@ class _StylesScreenState extends State<StylesScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 30),
+                        SizedBox(height: isLandscape ? 15 : 30),
 
                         // --- LISTA DE COCHES ---
                         Flexible(
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            itemCount: _carOptions.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 15),
-                            itemBuilder: (context, index) {
-                              final car = _carOptions[index];
-                              final isSelected =
-                                  car.assetPath == _selectedCarAsset;
-                              return _buildCarCard(car, isSelected);
-                            },
-                          ),
+                          child: isLandscape
+                              ? GridView.builder(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 2.5,
+                                        crossAxisSpacing: 15,
+                                        mainAxisSpacing: 15,
+                                      ),
+                                  padding: EdgeInsets.zero,
+                                  itemCount: _carOptions.length,
+                                  itemBuilder: (context, index) {
+                                    final car = _carOptions[index];
+                                    final isSelected =
+                                        car.assetPath == _selectedCarAsset;
+                                    return _buildCarCard(car, isSelected);
+                                  },
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: _carOptions.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 15),
+                                  itemBuilder: (context, index) {
+                                    final car = _carOptions[index];
+                                    final isSelected =
+                                        car.assetPath == _selectedCarAsset;
+                                    return _buildCarCard(car, isSelected);
+                                  },
+                                ),
                         ),
                       ],
                     ),
