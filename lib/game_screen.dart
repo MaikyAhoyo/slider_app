@@ -15,12 +15,14 @@ class GameScreen extends StatefulWidget {
   final String playerName;
   final SupabaseService supabaseService;
   final String carAssetPath;
+  final String backgroundAssetPath;
 
   const GameScreen({
     super.key,
     required this.playerName,
     required this.supabaseService,
     required this.carAssetPath,
+    required this.backgroundAssetPath,
   });
 
   @override
@@ -41,10 +43,8 @@ class _GameScreenState extends State<GameScreen>
   late double roadWidth;
   late double screenWidth;
   late double screenHeight;
-  
-  // CAMBIO 1: Aumentamos la tasa de aparición (de 0.02 a 0.05)
-  // Como ahora filtramos los que chocan, necesitamos intentar generar más seguido
-  static const double spawnRate = 0.095; 
+  static const double spawnRate =
+      0.02; // Probabilidad de generar objeto por tick
 
   // Estado del juego
   double _fuel = 100.0;
@@ -53,10 +53,12 @@ class _GameScreenState extends State<GameScreen>
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
-  double _gameSpeed = 7.0;
   double _carXOffset = 0.0;
 
-  /// Inicializa el estado del juego
+  // Variables para scroll infinito y velocidad
+  double _gameSpeed = 5.0;
+  double _backgroundScrollOffset = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +81,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Genera objetos aleatoriamente en la carretera
-   void _spawnGameObject() {
+  void _spawnGameObject() {
     if (_random.nextDouble() < spawnRate) {
       final String randomObject = _getRandomObject();
       double width = 50;
@@ -92,70 +94,36 @@ class _GameScreenState extends State<GameScreen>
       final double halfRoadWidth = roadWidth / 2;
       final double minX = -(halfRoadWidth - width / 2);
       final double maxX = halfRoadWidth - width / 2;
-      
+      final double randomX = minX + _random.nextDouble() * (maxX - minX);
+
       // Determinar posición inicial Y (avance)
       final orientation = MediaQuery.of(context).orientation;
       final bool isLandscape = orientation == Orientation.landscape;
 
       double startY;
       if (isLandscape) {
+        // En landscape, empiezan a la derecha (screenWidth)
         startY = screenWidth + 100;
       } else {
+        // En portrait, empiezan arriba (-100)
         startY = -100;
       }
 
-      // --- NUEVA LÓGICA DE NO SOBREPOSICIÓN ---
-      // CAMBIO 2: Aumentamos los intentos de 5 a 15
-      // Esto asegura que si hay espacio, el código lo encuentre
-      for (int attempt = 0; attempt < 15; attempt++) {
-        final double randomX = minX + _random.nextDouble() * (maxX - minX);
-        
-        bool overlaps = false;
-        
-        // Revisar colisión con objetos existentes recién generados
-        for (final obj in _gameObjects) {
-          // Solo nos importan los objetos que están cerca del punto de spawn
-          // (ej. a menos de 150 pixeles de distancia en Y)
-          if ((isLandscape && (obj.y - startY).abs() < 150) || 
-              (!isLandscape && (obj.y - startY).abs() < 150)) {
-            
-            // Chequeo simple de superposición en el eje X (con un margen de seguridad)
-            double margin = 8.0; // Espacio mínimo entre objetos
-            
-            if (randomX < obj.x + obj.width + margin && 
-                randomX + width + margin > obj.x) {
-              overlaps = true;
-              break; 
-            }
-          }
-        }
-
-        // Si no se sobrepone, agregamos el objeto y terminamos
-        if (!overlaps) {
-          _gameObjects.add(
-            GameObject(
-              x: randomX,
-              y: startY,
-              asset: randomObject,
-              width: width,
-              height: height,
-            ),
-          );
-          break; // Salir del bucle de intentos
-        }
-        // Si se sobrepone, el bucle 'for' intentará de nuevo con otra X
-      }
+      _gameObjects.add(
+        GameObject(
+          x: randomX,
+          y: startY,
+          asset: randomObject,
+          width: width,
+          height: height,
+        ),
+      );
     }
   }
 
   /// Retorna un tipo de objeto aleatorio
   String _getRandomObject() {
     final double roll = _random.nextDouble();
-
-    if (_fuel <15.0 && roll < 0.40) {
-      return 'assets/objects/gas.png';
-    }
-
     if (roll < 0.01) {
       return 'assets/objects/tire.png';
     } else if (roll < 0.11) {
@@ -170,19 +138,19 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Actualiza la posición de los objetos
- void _updateGameObjects() {
+  void _updateGameObjects() {
     final double screenHeight = MediaQuery.of(context).size.height;
     final orientation = MediaQuery.of(context).orientation;
     final bool isLandscape = orientation == Orientation.landscape;
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
       if (isLandscape) {
-        _gameObjects[i].y -= _gameSpeed; // <--- CAMBIO AQUÍ (antes era 5)
+        _gameObjects[i].y -= _gameSpeed;
         if (_gameObjects[i].y < -100) {
           _gameObjects.removeAt(i);
         }
       } else {
-        _gameObjects[i].y += _gameSpeed; // <--- CAMBIO AQUÍ (antes era 5)
+        _gameObjects[i].y += _gameSpeed;
         if (_gameObjects[i].y > screenHeight) {
           _gameObjects.removeAt(i);
         }
@@ -260,41 +228,44 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  /// Reproduce la música del juego
   Future<void> _playMusic() async {
-    await _audioManager.playMusic('game_theme');
+    String theme = 'game_theme';
+    if (widget.backgroundAssetPath.contains('forest')) {
+      theme = 'theme_forest';
+    } else if (widget.backgroundAssetPath.contains('snow')) {
+      theme = 'theme_snow';
+    } else if (widget.backgroundAssetPath.contains('haunted')) {
+      theme = 'theme_haunted';
+    } else if (widget.backgroundAssetPath.contains('mars')) {
+      theme = 'theme_mars';
+    } else if (widget.backgroundAssetPath.contains('underwater')) {
+      theme = 'theme_underwater';
+    }
+    await _audioManager.playMusic(theme);
   }
 
-  /// Detiene la música del juego
   Future<void> _stopMusic() async {
     await _audioManager.stopMusic();
   }
 
-  /// Reproduce un sonido
   Future<void> _playSound(String soundId) async {
     await _audioManager.playSfx(soundId);
   }
 
-
-  void _updateDifficulty() {
-    // Velocidad base: 5.0
-    // Aumenta 0.5 de velocidad por cada 100 monedas recolectadas
-    // Tope máximo de velocidad: 15.0
-    double newSpeed = 5.0 + (_coins / 100) * 0.35;
-    
-    // Opcional: Aumentar también el consumo de gasolina si va muy rápido
-    // _fuelConsumption = 0.05 + (_coins / 500) * 0.01;
-
-    _gameSpeed = newSpeed.clamp(7.0, 30.0);
-  }
-
-
-  /// Ejecuta el bucle del juego
   void _onGameLoopTick() {
     if (_isGameOver) return;
     setState(() {
       _fuel -= 0.05;
-      _updateDifficulty(); // <--- NUEVO: Actualizar velocidad
+
+      // Actualizar scroll del fondo
+      _backgroundScrollOffset += _gameSpeed;
+      final orientation = MediaQuery.of(context).orientation;
+      final bool isLandscape = orientation == Orientation.landscape;
+
+      double maxScroll = isLandscape ? screenWidth : screenHeight;
+      if (_backgroundScrollOffset >= maxScroll) {
+        _backgroundScrollOffset = 0;
+      }
 
       _spawnGameObject();
       _updateGameObjects();
@@ -304,26 +275,24 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  /// Pausa el juego
   void _pauseGame() {
     setState(() => _isPaused = true);
     _gameLoopController.stop();
   }
 
-  /// Reanuda el juego
   void _resumeGame() {
     setState(() => _isPaused = false);
     _gameLoopController.repeat();
   }
 
-  /// Reinicia el juego
   void _restartGame() {
     setState(() {
       _fuel = 100.0;
       _tires = 3;
       _coins = 0;
       _isGameOver = false;
-      _gameSpeed = 7.0;
+      _gameSpeed = 5.0;
+      _backgroundScrollOffset = 0.0;
     });
     _gameLoopController.reset();
     _gameLoopController.repeat();
@@ -331,7 +300,6 @@ class _GameScreenState extends State<GameScreen>
     _isPaused = false;
   }
 
-  /// Finaliza el juego
   void _endGame(String reason) {
     if (_isGameOver) return;
     _isGameOver = true;
@@ -364,7 +332,6 @@ class _GameScreenState extends State<GameScreen>
     super.dispose();
   }
 
-  /// Construye la pantalla
   @override
   Widget build(BuildContext context) {
     return OrientationBuilder(
@@ -388,15 +355,30 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Construye la pantalla en modo portrait
   Widget _buildPortraitLayout() {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Container(color: Colors.lightBlue[100]),
+        // Fondo dinámico con scroll infinito (Vertical)
+        Positioned(
+          top: _backgroundScrollOffset,
+          left: 0,
+          right: 0,
+          height: screenHeight,
+          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+        ),
+        Positioned(
+          top: _backgroundScrollOffset - screenHeight,
+          left: 0,
+          right: 0,
+          height: screenHeight,
+          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+        ),
+
+        // Carretera transparente
         Align(
           alignment: Alignment.center,
-          child: Container(width: roadWidth, color: Colors.grey[700]),
+          child: Container(width: roadWidth, color: Colors.transparent),
         ),
 
         // Objetos
@@ -414,7 +396,8 @@ class _GameScreenState extends State<GameScreen>
           );
         }).toList(),
 
-        // Hitbox
+        // Hitboxes (Opcional: comentar para producción)
+        /*
         ..._gameObjects.map((obj) {
           final double posX = (screenWidth / 2) + obj.x;
           final double hitboxWidth = obj.width * 0.7;
@@ -422,35 +405,49 @@ class _GameScreenState extends State<GameScreen>
           return Positioned(
             left: posX - (hitboxWidth / 2),
             top: obj.y,
-            child: Container(width: hitboxWidth, height: hitboxHeight),
+            child: Container(
+              width: hitboxWidth,
+              height: hitboxHeight,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+            ),
           );
         }).toList(),
+        */
 
         // Carro
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
-            child: SizedBox(
-              width: roadWidth+15.0,
-              child: DraggableCar(
-                imagePath: widget.carAssetPath,
-                width: carWidth,
-                height: 70,
-                onPositionChanged: (value) {
-                  _carXOffset = value;
-                },
-              ),
+            child: DraggableCar(
+              imagePath: widget.carAssetPath,
+              width: carWidth,
+              height: 70,
+              onPositionChanged: (value) {
+                _carXOffset = value;
+              },
             ),
           ),
         ),
 
-        // Hitbox del carro
+        // Hitbox del carro (Opcional)
+        /*
         Positioned(
           left: (screenWidth / 2) + _carXOffset - (carWidth / 2),
           bottom: 20,
-          child: IgnorePointer(child: Container(width: carWidth, height: 70)),
+          child: IgnorePointer(
+            child: Container(
+              width: carWidth,
+              height: 70,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red, width: 2),
+              ),
+            ),
+          ),
         ),
+        */
 
         // UI
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
@@ -479,15 +476,32 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Construye la pantalla en modo landscape
   Widget _buildLandscapeLayout() {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Container(color: Colors.lightBlue[100]),
+        // Fondo dinámico con scroll infinito (Horizontal hacia la izquierda)
+        // Imagen 1
+        Positioned(
+          left: -_backgroundScrollOffset,
+          top: 0,
+          bottom: 0,
+          width: screenWidth,
+          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+        ),
+        // Imagen 2 (inmediatamente después)
+        Positioned(
+          left: -_backgroundScrollOffset + screenWidth,
+          top: 0,
+          bottom: 0,
+          width: screenWidth,
+          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+        ),
+
+        // Carretera transparente
         Align(
           alignment: Alignment.center,
-          child: Container(height: roadWidth, color: Colors.grey[700]),
+          child: Container(height: roadWidth, color: Colors.transparent),
         ),
 
         // Objetos
@@ -496,35 +510,45 @@ class _GameScreenState extends State<GameScreen>
           return Positioned(
             left: obj.y,
             top: posY - (obj.width / 2),
-            child: Image.asset(
-              obj.asset,
-              width: obj.width,
-              height: obj.height,
-              fit: BoxFit.contain,
+            child: Transform.rotate(
+              angle: pi / 2,
+              child: Image.asset(
+                obj.asset,
+                width: obj.width,
+                height: obj.height,
+                fit: BoxFit.contain,
+              ),
             ),
           );
         }).toList(),
 
-        // Hitbox
+        // Hitboxes (Opcional)
+        /*
         ..._gameObjects.map((obj) {
           final double posY = (screenHeight / 2) + obj.x;
-          final double hitboxWidth = obj.width * 0.7;
-          final double hitboxHeight = obj.height * 0.7;
+          final double hitboxWidth = obj.height * 0.7;
+          final double hitboxHeight = obj.width * 0.7;
           return Positioned(
             left: obj.y,
             top: posY - (hitboxHeight / 2),
-            child: Container(width: hitboxWidth, height: hitboxHeight),
+            child: Container(
+              width: hitboxWidth,
+              height: hitboxHeight,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+            ),
           );
         }).toList(),
+        */
 
         // Carro
-       Align(
+        Align(
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(left: 20.0),
             child: SizedBox(
-              height: roadWidth+ 15.0, // <--- ESTO YA ESTABA, PERO ASEGURA EL LÍMITE
-              width: 70, // Ancho del área táctil (largo del carro)
+              height: roadWidth,
               child: DraggableCarHorizontal(
                 imagePath: widget.carAssetPath,
                 width: 70,
@@ -537,12 +561,22 @@ class _GameScreenState extends State<GameScreen>
           ),
         ),
 
-        // Hitbox del carro
+        // Hitbox del carro (Opcional)
+        /*
         Positioned(
           left: 20,
           top: (screenHeight / 2) + _carXOffset - (carWidth / 2),
-          child: IgnorePointer(child: Container(width: 70, height: carWidth)),
+          child: IgnorePointer(
+            child: Container(
+              width: 70,
+              height: carWidth,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red, width: 2),
+              ),
+            ),
+          ),
         ),
+        */
 
         // UI
         Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
@@ -575,7 +609,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Construye la UI del juego
   Widget _buildGameUI() {
     return Container(
       padding: const EdgeInsets.all(10.0),

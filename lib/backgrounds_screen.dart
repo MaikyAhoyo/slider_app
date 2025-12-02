@@ -12,10 +12,7 @@ class BackgroundOption {
 class BackgroundStyles extends StatefulWidget {
   final String currentBackground;
 
-  const BackgroundStyles({
-    super.key,
-    required this.currentBackground,
-  });
+  const BackgroundStyles({super.key, required this.currentBackground});
 
   @override
   State<BackgroundStyles> createState() => _BackgroundStylesState();
@@ -27,20 +24,21 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
   final List<BackgroundOption> _backgroundOptions = [
     BackgroundOption(
-      name: 'CITY NIGHT',
-      assetPath: 'assets/backgrounds/city_night.png',
+      name: 'FOREST',
+      assetPath: 'assets/backgrounds/forest_bg.png',
     ),
     BackgroundOption(
-      name: 'RETRO GRID',
-      assetPath: 'assets/backgrounds/retro_grid.png',
+      name: 'NORTH POLE',
+      assetPath: 'assets/backgrounds/snow_bg.png',
     ),
     BackgroundOption(
-      name: 'SUNSET ROAD',
-      assetPath: 'assets/backgrounds/sunset_road.png',
+      name: 'HAUNTED FOREST',
+      assetPath: 'assets/backgrounds/haunted_forest_bg.png',
     ),
+    BackgroundOption(name: 'MARS', assetPath: 'assets/backgrounds/mars_bg.png'),
     BackgroundOption(
-      name: 'NEON TUNNEL',
-      assetPath: 'assets/backgrounds/neon_tunnel.png',
+      name: 'UNDERWATER',
+      assetPath: 'assets/backgrounds/underwater_bg.png',
     ),
   ];
 
@@ -54,7 +52,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
     final storage = StorageService();
     await storage.init();
 
-    // Cargar lo guardado si existe, si no el valor que venía del constructor
     _selectedBackground = storage.getSelectedBackground().isNotEmpty
         ? storage.getSelectedBackground()
         : widget.currentBackground;
@@ -66,6 +63,12 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final bgImage = isLandscape
+        ? "assets/backgrounds/menu_h_bg.png"
+        : "assets/backgrounds/menu_bg.png";
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: Colors.black,
@@ -74,9 +77,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
         ),
       );
     }
-
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -99,13 +99,11 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
       body: Stack(
         children: [
+          // Fondo
           Positioned.fill(
             child: Opacity(
-              opacity: 0.5,
-              child: Image.asset(
-                "assets/backgrounds/menu_bg.png",
-                fit: BoxFit.cover,
-              ),
+              opacity: 0.4,
+              child: Image.asset(bgImage, fit: BoxFit.cover),
             ),
           ),
 
