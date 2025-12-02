@@ -6,6 +6,7 @@ import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'styles_screen.dart';
 import 'ui/retro_ui.dart';
+import 'services/storage_service.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -15,6 +16,7 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
+  final StorageService _storage = StorageService();
   String playerName = "Jugador";
   final TextEditingController _controller = TextEditingController();
 
@@ -27,8 +29,17 @@ class _MenuScreenState extends State<MenuScreen> {
     super.initState();
     _supabaseService = SupabaseService();
     _controller.text = playerName;
+    _loadUserData();
     _signIn();
     _playMenuMusic();
+  }
+
+  void _loadUserData() {
+    setState(() {
+      playerName = _storage.getPlayerName();
+      _selectedCarAsset = _storage.getSelectedCar();
+      _controller.text = playerName;
+    });
   }
 
   Future<void> _signIn() async {
@@ -54,8 +65,7 @@ class _MenuScreenState extends State<MenuScreen> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor:
-            Colors.transparent, // Transparente para usar nuestro box
+        backgroundColor: Colors.transparent,
         child: RetroBox(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -101,6 +111,7 @@ class _MenuScreenState extends State<MenuScreen> {
                             ? _controller.text
                             : "Jugador";
                       });
+                      _storage.savePlayerName(playerName);
                       Navigator.pop(context);
                     },
                     child: Text(

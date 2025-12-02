@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import '../services/storage_service.dart';
 
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
@@ -26,30 +27,48 @@ class AudioManager {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
   }
 
+  /// Carga los ajustes del almacenamiento
+  Future<void> loadSettings() async {
+    final storage = StorageService();
+    _masterVolume = storage.getMasterVolume();
+    _musicVolume = storage.getMusicVolume();
+    _sfxVolume = storage.getSfxVolume();
+    _updateVolumes();
+    debugPrint(
+      "🔊 Audio cargado: Master: $_masterVolume, Music: $_musicVolume",
+    );
+  }
+
   double get masterVolume => _masterVolume;
   double get musicVolume => _musicVolume;
   double get sfxVolume => _sfxVolume;
+
   void setMasterVolume(double value) {
     _masterVolume = value.clamp(0.0, 1.0);
     _updateVolumes();
+    StorageService().saveMasterVolume(_masterVolume);
   }
 
   void setMusicVolume(double value) {
     _musicVolume = value.clamp(0.0, 1.0);
     _updateVolumes();
+    StorageService().saveMusicVolume(_musicVolume);
   }
 
   void setSfxVolume(double value) {
     _sfxVolume = value.clamp(0.0, 1.0);
     _updateVolumes();
+    StorageService().saveSfxVolume(_sfxVolume);
   }
 
+  /// Actualiza el volumen general
   void _updateVolumes() {
+    /// Multiplicamos por el Master para que baje todo junto si bajas el general
     _musicPlayer.setVolume(_masterVolume * _musicVolume);
     _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
   }
 
-  // Reproducir música
+  /// Reproduce música
   Future<void> playMusic(String soundId) async {
     final path = _soundMap[soundId];
     if (path == null) {
@@ -58,6 +77,11 @@ class AudioManager {
     }
 
     try {
+      /// No detenemos si ya está sonando la misma canción
+      if (_musicPlayer.state == PlayerState.playing) {
+        return;
+      }
+
       await _musicPlayer.stop();
       await _musicPlayer.setSource(AssetSource(path));
       await _musicPlayer.setVolume(_masterVolume * _musicVolume);
@@ -67,11 +91,12 @@ class AudioManager {
     }
   }
 
+  /// Detiene la música
   Future<void> stopMusic() async {
     await _musicPlayer.stop();
   }
 
-  // Reproducir efecto de sonido
+  /// Reproduce un efecto de sonido
   Future<void> playSfx(String soundId) async {
     final path = _soundMap[soundId];
     if (path == null) {
@@ -80,7 +105,9 @@ class AudioManager {
     }
 
     try {
-      await _sfxPlayer.stop();
+      if (_sfxPlayer.state == PlayerState.playing) {
+        await _sfxPlayer.stop();
+      }
       await _sfxPlayer.setSource(AssetSource(path));
       await _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
       await _sfxPlayer.resume();
