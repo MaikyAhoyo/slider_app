@@ -4,7 +4,7 @@ import 'services/supabase_service.dart';
 import 'services/audio_manager.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
-import 'styles_screen.dart';
+import 'cars_screen.dart';
 import 'ui/retro_ui.dart';
 import 'services/storage_service.dart';
 
@@ -128,11 +128,11 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  void _openStyles() async {
+  void _openCars() async {
     final newCar = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => StylesScreen(currentCarAsset: _selectedCarAsset),
+        builder: (context) => CarsScreen(currentCarAsset: _selectedCarAsset),
       ),
     );
     if (newCar != null && newCar is String) {
@@ -318,7 +318,7 @@ class _MenuScreenState extends State<MenuScreen> {
           const SizedBox(height: 10),
 
           // BOTONES SECUNDARIOS
-          RetroButton(text: "GARAJE", onPressed: _openStyles),
+          RetroButton(text: "GARAJE", onPressed: _openCars),
           RetroButton(text: "CONFIG", onPressed: _openSettings),
         ],
       ),
