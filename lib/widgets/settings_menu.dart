@@ -1,6 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/audio_manager.dart';
+import '../ui/retro_ui.dart';
 
 class SettingsMenu extends StatefulWidget {
   final VoidCallback onBack;
@@ -29,170 +29,97 @@ class _SettingsMenuState extends State<SettingsMenu> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final orientation = MediaQuery.of(context).orientation;
-
-    // En landscape, usar altura como referencia para el ancho
-    final menuWidth = orientation == Orientation.landscape
-        ? size.height *
-              0.6 // 60% de la altura en horizontal
-        : 340.0; // Ancho fijo en vertical
+    final isLandscape = size.width > size.height;
+    final menuWidth = isLandscape ? size.height * 0.7 : 320.0;
 
     return Stack(
       children: [
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(color: Colors.black.withOpacity(0.6)),
-        ),
+        // Fondo oscuro
+        Container(color: Colors.black.withOpacity(0.7)),
 
         Center(
           child: SingleChildScrollView(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  width: menuWidth,
-                  constraints: BoxConstraints(
-                    maxWidth: size.width * 0.9,
-                    maxHeight: size.height * 0.85,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: orientation == Orientation.landscape ? 20 : 35,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade900.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'AJUSTES',
-                        style: TextStyle(
-                          fontSize: orientation == Orientation.landscape
-                              ? 22
-                              : 28,
-                          fontWeight: FontWeight.w900,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: menuWidth),
+              child: RetroBox(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // CABECERA
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(
+                          Icons.settings,
                           color: Colors.white,
-                          letterSpacing: 3,
-                          shadows: const [
-                            Shadow(
-                              blurRadius: 15,
-                              color: Colors.purpleAccent,
-                              offset: Offset(0, 0),
-                            ),
-                          ],
+                          size: 28,
                         ),
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 20 : 30,
-                      ),
-
-                      _buildNeonSlider(
-                        label: "Volumen Maestro",
-                        value: _masterVolume,
-                        icon: Icons.volume_up_rounded,
-                        activeColor: Colors.purpleAccent,
-                        onChanged: (val) {
-                          setState(() => _masterVolume = val);
-                          _audioManager.setMasterVolume(val);
-                        },
-                        isLandscape: orientation == Orientation.landscape,
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 12 : 20,
-                      ),
-
-                      _buildNeonSlider(
-                        label: "Música",
-                        value: _musicVolume,
-                        icon: Icons.music_note_rounded,
-                        activeColor: Colors.cyanAccent,
-                        onChanged: (val) {
-                          setState(() => _musicVolume = val);
-                          _audioManager.setMusicVolume(val);
-                        },
-                        isLandscape: orientation == Orientation.landscape,
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 12 : 20,
-                      ),
-
-                      _buildNeonSlider(
-                        label: "Efectos (SFX)",
-                        value: _sfxVolume,
-                        icon: Icons.graphic_eq_rounded,
-                        activeColor: Colors.orangeAccent,
-                        onChanged: (val) {
-                          setState(() => _sfxVolume = val);
-                          _audioManager.setSfxVolume(val);
-                        },
-                        isLandscape: orientation == Orientation.landscape,
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 20 : 35,
-                      ),
-
-                      Divider(
-                        color: Colors.white.withOpacity(0.1),
-                        thickness: 1,
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 10 : 15,
-                      ),
-
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: widget.onBack,
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 18,
+                        Text(
+                          'AJUSTES',
+                          style: getRetroStyle(
+                            size: 24,
+                            color: Colors.yellowAccent,
                           ),
-                          label: const Text(
-                            'VOLVER',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
+                        ),
+                        // Botón cerrar "X" estilo ventana clásica
+                        GestureDetector(
+                          onTap: widget.onBack,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white),
+                              color: Colors.red,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.05),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              vertical: orientation == Orientation.landscape
-                                  ? 12
-                                  : 16,
-                            ),
-                            elevation: 0,
-                            side: BorderSide(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                            padding: const EdgeInsets.all(2),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    const Divider(
+                      color: Colors.white,
+                      thickness: 2,
+                      height: 20,
+                    ),
+
+                    // SLIDERS
+                    _buildRetroSlider(
+                      label: "MASTER",
+                      value: _masterVolume,
+                      onChanged: (val) {
+                        setState(() => _masterVolume = val);
+                        _audioManager.setMasterVolume(val);
+                      },
+                    ),
+                    const SizedBox(height: 15),
+
+                    _buildRetroSlider(
+                      label: "MUSIC",
+                      value: _musicVolume,
+                      onChanged: (val) {
+                        setState(() => _musicVolume = val);
+                        _audioManager.setMusicVolume(val);
+                      },
+                    ),
+                    const SizedBox(height: 15),
+
+                    _buildRetroSlider(
+                      label: "SFX",
+                      value: _sfxVolume,
+                      onChanged: (val) {
+                        setState(() => _sfxVolume = val);
+                        _audioManager.setSfxVolume(val);
+                      },
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // BOTÓN VOLVER GRANDE
+                    RetroButton(text: "VOLVER", onPressed: widget.onBack),
+                  ],
                 ),
               ),
             ),
@@ -202,59 +129,38 @@ class _SettingsMenuState extends State<SettingsMenu> {
     );
   }
 
-  Widget _buildNeonSlider({
+  Widget _buildRetroSlider({
     required String label,
     required double value,
-    required IconData icon,
-    required Color activeColor,
     required ValueChanged<double> onChanged,
-    bool isLandscape = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, color: Colors.white70, size: isLandscape ? 16 : 18),
-            const SizedBox(width: 8),
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                fontSize: isLandscape ? 11 : 12,
-                fontWeight: FontWeight.bold,
-                color: activeColor.withOpacity(0.9),
-                letterSpacing: 1,
-              ),
-            ),
-            const Spacer(),
+            Text(label, style: getRetroStyle(size: 14)),
             Text(
               "${(value * 100).toInt()}%",
-              style: TextStyle(
-                fontSize: isLandscape ? 11 : 12,
-                color: Colors.white54,
-                fontFamily: 'monospace',
-              ),
+              style: getRetroStyle(color: Colors.greenAccent, size: 14),
             ),
           ],
         ),
-
         const SizedBox(height: 5),
-
         SizedBox(
-          height: isLandscape ? 25 : 30,
+          height: 24,
           child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4.0,
-              activeTrackColor: activeColor,
-              inactiveTrackColor: Colors.white.withOpacity(0.1),
+            data: SliderThemeData(
+              trackHeight: 12,
+              activeTrackColor: Colors.green,
+              inactiveTrackColor: Colors.black54,
               thumbColor: Colors.white,
-              thumbShape: RoundSliderThumbShape(
-                enabledThumbRadius: isLandscape ? 6.0 : 8.0,
-              ),
-              overlayColor: activeColor.withOpacity(0.2),
-              overlayShape: RoundSliderOverlayShape(
-                overlayRadius: isLandscape ? 12.0 : 16.0,
-              ),
+              thumbShape: const RoundSliderThumbShape(
+                enabledThumbRadius: 0,
+              ), // Sin bolita (estilo barra de progreso)
+              overlayShape: SliderComponentShape.noOverlay,
+              trackShape: const RectangularSliderTrackShape(),
             ),
             child: Slider(value: value, onChanged: onChanged),
           ),
