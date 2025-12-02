@@ -46,39 +46,68 @@ class _GameScreenState extends State<GameScreen>
 
   // Estado del juego
   double _fuel = 100.0;
-  int _tires = 3; // Llantas (vidas) - inicia en 4
+  int _tires = 3; // Llantas (vidas)
   int _coins = 0; // Monedas recolectadas
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
   double _carXOffset = 0.0;
 
+  /// Inicializa el estado del juego
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final size = MediaQuery.of(context).size;
+      screenWidth = size.width;
+      screenHeight = size.height;
+      roadWidth = screenWidth * 0.8;
+      carWidth = 35;
+      setState(() {});
+    });
+
+    _gameLoopController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    _gameLoopController.addListener(_onGameLoopTick);
+    _gameLoopController.repeat();
+    _playMusic();
+  }
+
   /// Genera objetos aleatoriamente en la carretera
   void _spawnGameObject() {
     if (_random.nextDouble() < spawnRate) {
       final String randomObject = _getRandomObject();
-
-      // Determinar el tamaño según el tipo de objeto
       double width = 50;
       double height = 50;
-
       if (randomObject == 'assets/objects/rock_large.png') {
-        // Rock large tiene el doble de ancho, mismo largo
         width = 100;
         height = 50;
       }
 
-      // Generar SOLO dentro del ancho de la carretera
-      // Considerar el ancho del objeto para no salir de la carretera
       final double halfRoadWidth = roadWidth / 2;
       final double minX = -(halfRoadWidth - width / 2);
       final double maxX = halfRoadWidth - width / 2;
       final double randomX = minX + _random.nextDouble() * (maxX - minX);
 
+      // Determinar posición inicial Y (avance)
+      final orientation = MediaQuery.of(context).orientation;
+      final bool isLandscape = orientation == Orientation.landscape;
+
+      double startY;
+      if (isLandscape) {
+        // En landscape, empiezan a la derecha (screenWidth)
+        startY = screenWidth + 100;
+      } else {
+        // En portrait, empiezan arriba (-100)
+        startY = -100;
+      }
+
       _gameObjects.add(
         GameObject(
           x: randomX,
-          y: -100,
+          y: startY,
           asset: randomObject,
           width: width,
           height: height,
@@ -90,13 +119,6 @@ class _GameScreenState extends State<GameScreen>
   /// Retorna un tipo de objeto aleatorio
   String _getRandomObject() {
     final double roll = _random.nextDouble();
-
-    // Probabilidades:
-    // 0.00 - 0.01: Llanta (1%) - Muy raro
-    // 0.01 - 0.11: Gasolina (10%) - Raro
-    // 0.11 - 0.41: Moneda (30%)
-    // 0.41 - 1.00: Roca (59%)
-
     if (roll < 0.01) {
       return 'assets/objects/tire.png';
     } else if (roll < 0.11) {
@@ -113,76 +135,75 @@ class _GameScreenState extends State<GameScreen>
   /// Actualiza la posición de los objetos
   void _updateGameObjects() {
     final double screenHeight = MediaQuery.of(context).size.height;
+    final orientation = MediaQuery.of(context).orientation;
+    final bool isLandscape = orientation == Orientation.landscape;
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
-      _gameObjects[i].y += 5; // Velocidad de caída
-
-      // Elimina objetos que salieron de la pantalla
-      if (_gameObjects[i].y > screenHeight) {
-        _gameObjects.removeAt(i);
+      if (isLandscape) {
+        _gameObjects[i].y -= 5;
+        if (_gameObjects[i].y < -100) {
+          _gameObjects.removeAt(i);
+        }
+      } else {
+        _gameObjects[i].y += 5;
+        if (_gameObjects[i].y > screenHeight) {
+          _gameObjects.removeAt(i);
+        }
       }
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    // Usar addPostFrameCallback para esperar a que el widget esté listo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Calcular dinámicamente el tamaño del carro basado en el ancho de pantalla
-      final size = MediaQuery.of(context).size;
-      screenWidth = size.width;
-      screenHeight = size.height;
-      // Carretera toma 80% del ancho de pantalla
-      roadWidth = screenWidth * 0.8;
-      // Carro es 35px de ancho
-      carWidth = 35;
-
-      setState(() {});
-    });
-
-    _gameLoopController = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        seconds: 1,
-      ), // La duración no importa, solo el tick
-    );
-
-    // Agregamos un listener que se llama en cada frame (tick)
-    _gameLoopController.addListener(_onGameLoopTick);
-
-    // Iniciamos el bucle del juego
-    _gameLoopController.repeat();
-  }
-
   /// Detecta colisiones entre el carro y los objetos
   void _checkCollisions() {
-    // Posición del carro (aproximada, al centro abajo)
-    final double carScreenX = (screenWidth / 2) + _carXOffset;
-    final double carScreenY = screenHeight - 100;
+    final orientation = MediaQuery.of(context).orientation;
+    final bool isLandscape = orientation == Orientation.landscape;
 
-    // Hitbox completa: usar el tamaño real del carro
-    final double carHitboxWidth = carWidth;
-    final double carHitboxHeight = 70;
+    double carScreenX, carScreenY;
+    double carHitboxWidth, carHitboxHeight;
+
+    if (isLandscape) {
+      carScreenX = 20;
+      carScreenY = (screenHeight / 2) + _carXOffset - (carWidth / 2);
+      carHitboxWidth = 70;
+      carHitboxHeight = carWidth;
+    } else {
+      carScreenX = (screenWidth / 2) + _carXOffset - (carWidth / 2);
+      carScreenY = screenHeight - 20 - 70;
+      carHitboxWidth = carWidth;
+      carHitboxHeight = 70;
+    }
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
       final GameObject obj = _gameObjects[i];
+      double objScreenX, objScreenY;
+      double objHitboxWidth, objHitboxHeight;
 
-      // Posición del objeto en pantalla
-      final double objScreenX = (screenWidth / 2) + obj.x;
-      final double objScreenY = obj.y;
+      if (isLandscape) {
+        objScreenX = obj.y;
+        objScreenY = (screenHeight / 2) + obj.x - (obj.width / 2);
+        objHitboxWidth = obj.height * 0.7;
+        objHitboxHeight = obj.width * 0.7;
+      } else {
+        objScreenX = (screenWidth / 2) + obj.x - (obj.width / 2);
+        objScreenY = obj.y;
+        objHitboxWidth = obj.width * 0.7;
+        objHitboxHeight = obj.height * 0.7;
+      }
 
-      // Hitbox completa de los objetos
-      final double objHitboxWidth = obj.width;
-      final double objHitboxHeight = obj.height;
+      double carLeft = carScreenX;
+      double carRight = carScreenX + carHitboxWidth;
+      double carTop = carScreenY;
+      double carBottom = carScreenY + carHitboxHeight;
 
-      // Detectar colisión (simple AABB collision)
-      if (carScreenX - carHitboxWidth / 2 < objScreenX + objHitboxWidth / 2 &&
-          carScreenX + carHitboxWidth / 2 > objScreenX - objHitboxWidth / 2 &&
-          carScreenY < objScreenY + objHitboxHeight &&
-          carScreenY + carHitboxHeight > objScreenY) {
-        // Hay colisión
+      double objLeft = objScreenX;
+      double objRight = objScreenX + objHitboxWidth;
+      double objTop = objScreenY;
+      double objBottom = objScreenY + objHitboxHeight;
+
+      if (carLeft < objRight &&
+          carRight > objLeft &&
+          carTop < objBottom &&
+          carBottom > objTop) {
         if (obj.asset == 'assets/objects/gas.png') {
           _fuel = (_fuel + 30).clamp(0, 100);
           _playSound('gas_fx');
@@ -197,73 +218,52 @@ class _GameScreenState extends State<GameScreen>
           _tires -= 1;
           _playSound('crash_fx');
         }
-
-        // Eliminar el objeto
         _gameObjects.removeAt(i);
       }
     }
   }
 
-  /// Función para reproducir la música en bucle
+  /// Reproduce la música del juego
   Future<void> _playMusic() async {
     await _audioManager.playMusic('game_theme');
   }
 
-  /// Detiene la música (se llama al salir del menú)
+  /// Detiene la música del juego
   Future<void> _stopMusic() async {
     await _audioManager.stopMusic();
   }
 
-  /// Función para reproducir un sonido
+  /// Reproduce un sonido
   Future<void> _playSound(String soundId) async {
     await _audioManager.playSfx(soundId);
   }
 
-  /// Este es el corazón del juego, se llama ~60 veces por segundo
+  /// Ejecuta el bucle del juego
   void _onGameLoopTick() {
     if (_isGameOver) return;
-
-    // setState() le dice a Flutter que redibuje la pantalla con los nuevos valores
     setState(() {
-      // 1. Reducir la gasolina
       _fuel -= 0.05;
-
-      // 2. Generar objetos aleatoriamente
       _spawnGameObject();
-
-      // 3. Actualizar posición de objetos
       _updateGameObjects();
-
-      // 4. Detectar colisiones
       _checkCollisions();
-
-      // 5. Comprobar condiciones de Game Over
-      if (_fuel <= 0) {
-        _endGame("¡Sin gasolina!");
-      }
-      if (_tires <= 0) {
-        _endGame("¡Sin llantas!");
-      }
+      if (_fuel <= 0) _endGame("¡Sin gasolina!");
+      if (_tires <= 0) _endGame("¡Sin llantas!");
     });
   }
 
-  /// Pausa el juego, detiene el bucle
+  /// Pausa el juego
   void _pauseGame() {
-    setState(() {
-      _isPaused = true;
-    });
+    setState(() => _isPaused = true);
     _gameLoopController.stop();
   }
 
-  /// Resume el juego, reanuda el bucle
+  /// Reanuda el juego
   void _resumeGame() {
-    setState(() {
-      _isPaused = false;
-    });
+    setState(() => _isPaused = false);
     _gameLoopController.repeat();
   }
 
-  /// Reinicia el juego, resetea los valores y vuelve a iniciar el bucle
+  /// Reinicia el juego
   void _restartGame() {
     setState(() {
       _fuel = 100.0;
@@ -277,20 +277,11 @@ class _GameScreenState extends State<GameScreen>
     _isPaused = false;
   }
 
-  /// Termina el juego, detiene el bucle y muestra el diálogo
+  /// Finaliza el juego
   void _endGame(String reason) {
-    if (_isGameOver) return; // Evita llamar esto múltiples veces
-
+    if (_isGameOver) return;
     _isGameOver = true;
     _gameLoopController.stop();
-
-    // Guardar la puntuación en Supabase
-    //widget.supabaseService.checkAndUpsertPlayer(
-    //  playerName: widget.playerName,
-    //  score: _coins,
-    //);
-
-    // Muestra el diálogo de Game Over
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -315,100 +306,193 @@ class _GameScreenState extends State<GameScreen>
   void dispose() {
     _gameLoopController.removeListener(_onGameLoopTick);
     _gameLoopController.dispose();
+    _stopMusic();
     super.dispose();
   }
 
+  /// Construye la pantalla
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final size = MediaQuery.of(context).size;
+        screenWidth = size.width;
+        screenHeight = size.height;
 
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Fondo (Cielo)
-          Container(color: Colors.lightBlue[100]),
+        if (orientation == Orientation.landscape) {
+          roadWidth = screenHeight * 0.8;
+        } else {
+          roadWidth = screenWidth * 0.8;
+        }
 
-          // 2. Carretera
-          Align(
-            alignment: Alignment.center,
-            child: Container(
-              width: roadWidth,
-              color: Colors.grey[700],
-              // Aquí podrías añadir un CustomPaint para dibujar las líneas de la carretera
+        return Scaffold(
+          body: orientation == Orientation.portrait
+              ? _buildPortraitLayout()
+              : _buildLandscapeLayout(),
+        );
+      },
+    );
+  }
+
+  /// Construye la pantalla en modo portrait
+  Widget _buildPortraitLayout() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(color: Colors.lightBlue[100]),
+        Align(
+          alignment: Alignment.center,
+          child: Container(width: roadWidth, color: Colors.grey[700]),
+        ),
+
+        // Objetos
+        ..._gameObjects.map((obj) {
+          final double posX = (screenWidth / 2) + obj.x;
+          return Positioned(
+            left: posX - (obj.width / 2),
+            top: obj.y,
+            child: Image.asset(
+              obj.asset,
+              width: obj.width,
+              height: obj.height,
+              fit: BoxFit.contain,
+            ),
+          );
+        }).toList(),
+
+        // Hitbox
+        ..._gameObjects.map((obj) {
+          final double posX = (screenWidth / 2) + obj.x;
+          final double hitboxWidth = obj.width * 0.7;
+          final double hitboxHeight = obj.height * 0.7;
+          return Positioned(
+            left: posX - (hitboxWidth / 2),
+            top: obj.y,
+            child: Container(width: hitboxWidth, height: hitboxHeight),
+          );
+        }).toList(),
+
+        // Carro
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 20.0),
+            child: DraggableCar(
+              imagePath: widget.carAssetPath,
+              width: carWidth,
+              height: 70,
+              onPositionChanged: (value) {
+                _carXOffset = value;
+              },
             ),
           ),
+        ),
 
-          // 3. Objetos del juego
-          ..._gameObjects.map((obj) {
-            final double posX = (screenWidth / 2) + obj.x;
-            return Positioned(
-              left: posX - (obj.width / 2),
-              top: obj.y,
-              child: Image.asset(
-                obj.asset,
-                width: obj.width,
-                height: obj.height,
-                fit: BoxFit.contain,
-              ),
-            );
-          }).toList(),
+        // Hitbox del carro
+        Positioned(
+          left: (screenWidth / 2) + _carXOffset - (carWidth / 2),
+          bottom: 20,
+          child: IgnorePointer(child: Container(width: carWidth, height: 70)),
+        ),
 
-          // DEBUG: Hitbox de los objetos
-          ..._gameObjects.map((obj) {
-            final double posX = (screenWidth / 2) + obj.x;
-            final double hitboxWidth = obj.width * 0.7;
-            final double hitboxHeight = obj.height * 0.7;
-            return Positioned(
-              left: posX - (hitboxWidth / 2),
-              top: obj.y,
-              child: Container(
-                width: hitboxWidth,
-                height: hitboxHeight,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 2),
-                ),
-              ),
-            );
-          }).toList(),
+        // UI
+        Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
 
-          // 4. El carro (tu widget)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              child: DraggableCar(
+        // Menus
+        if (_isPaused && !_isSettings)
+          PauseMenu(
+            onResume: _resumeGame,
+            onRestart: _restartGame,
+            onQuit: () => Navigator.of(context).pop(),
+            onSettings: () {
+              setState(() {
+                _isSettings = true;
+              });
+            },
+          ),
+        if (_isSettings)
+          SettingsMenu(
+            onBack: () {
+              setState(() {
+                _isSettings = false;
+              });
+            },
+          ),
+      ],
+    );
+  }
+
+  /// Construye la pantalla en modo landscape
+  Widget _buildLandscapeLayout() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(color: Colors.lightBlue[100]),
+        Align(
+          alignment: Alignment.center,
+          child: Container(height: roadWidth, color: Colors.grey[700]),
+        ),
+
+        // Objetos
+        ..._gameObjects.map((obj) {
+          final double posY = (screenHeight / 2) + obj.x;
+          return Positioned(
+            left: obj.y,
+            top: posY - (obj.width / 2),
+            child: Image.asset(
+              obj.asset,
+              width: obj.width,
+              height: obj.height,
+              fit: BoxFit.contain,
+            ),
+          );
+        }).toList(),
+
+        // Hitbox
+        ..._gameObjects.map((obj) {
+          final double posY = (screenHeight / 2) + obj.x;
+          final double hitboxWidth = obj.width * 0.7;
+          final double hitboxHeight = obj.height * 0.7;
+          return Positioned(
+            left: obj.y,
+            top: posY - (hitboxHeight / 2),
+            child: Container(width: hitboxWidth, height: hitboxHeight),
+          );
+        }).toList(),
+
+        // Carro
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20.0),
+            child: SizedBox(
+              height: roadWidth,
+              child: DraggableCarHorizontal(
                 imagePath: widget.carAssetPath,
-                width: carWidth,
-                height: 70,
+                width: 70,
+                height: carWidth,
                 onPositionChanged: (value) {
                   _carXOffset = value;
                 },
               ),
             ),
           ),
+        ),
 
-          // DEBUG: Hitbox del carro
-          Positioned(
-            left: (screenWidth / 2) + _carXOffset - (carWidth / 2),
-            bottom: 20,
-            child: IgnorePointer(
-              child: Container(
-                width: carWidth,
-                height: 70,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.red, width: 2),
-                ),
-              ),
-            ),
-          ),
+        // Hitbox del carro
+        Positioned(
+          left: 20,
+          top: (screenHeight / 2) + _carXOffset - (carWidth / 2),
+          child: IgnorePointer(child: Container(width: 70, height: carWidth)),
+        ),
 
-          // 5. Interfaz de Usuario (UI) en la parte superior
-          Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
+        // UI
+        Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
 
-          // 6. Menú de Pausa
-          if (_isPaused && !_isSettings)
-            PauseMenu(
+        // Menus
+        if (_isPaused && !_isSettings)
+          Center(
+            child: PauseMenu(
               onResume: _resumeGame,
               onRestart: _restartGame,
               onQuit: () => Navigator.of(context).pop(),
@@ -418,22 +502,22 @@ class _GameScreenState extends State<GameScreen>
                 });
               },
             ),
-
-          // 7. Menú de Configuración
-          if (_isSettings)
-            SettingsMenu(
+          ),
+        if (_isSettings)
+          Center(
+            child: SettingsMenu(
               onBack: () {
                 setState(() {
                   _isSettings = false;
                 });
               },
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
-  /// Construye la UI del juego (Pausa, Puntos, Gasolina, Llantas)
+  /// Construye la UI del juego
   Widget _buildGameUI() {
     return Container(
       padding: const EdgeInsets.all(10.0),
@@ -444,7 +528,6 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Botón del menú de pausa
           IconButton(
             icon: const Icon(Icons.pause, color: Colors.white),
             onPressed: () {
@@ -454,8 +537,6 @@ class _GameScreenState extends State<GameScreen>
               _pauseGame();
             },
           ),
-
-          // Monedas
           Row(
             children: [
               const Text('🪙', style: TextStyle(fontSize: 20)),
@@ -470,8 +551,6 @@ class _GameScreenState extends State<GameScreen>
               ),
             ],
           ),
-
-          // Llantas
           Row(
             children: [
               const Icon(Icons.tire_repair, color: Colors.white),
@@ -486,19 +565,16 @@ class _GameScreenState extends State<GameScreen>
               ),
             ],
           ),
-
-          // Gasolina
           Row(
             children: [
               const Icon(Icons.local_gas_station, color: Colors.white),
               const SizedBox(width: 5),
-              // Barra de progreso para la gasolina
               SizedBox(
                 width: 100,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
-                    value: _fuel / 100.0, // Valor entre 0.0 y 1.0
+                    value: _fuel / 100.0,
                     backgroundColor: Colors.grey,
                     color: _fuel > 20 ? Colors.green : Colors.red,
                     minHeight: 15,
@@ -513,7 +589,6 @@ class _GameScreenState extends State<GameScreen>
   }
 }
 
-/// Clase para representar un objeto en el juego
 class GameObject {
   double x;
   double y;

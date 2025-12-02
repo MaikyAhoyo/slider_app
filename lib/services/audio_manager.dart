@@ -8,12 +8,10 @@ class AudioManager {
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
 
-  // Volúmenes (0.0 a 1.0)
   double _masterVolume = 1.0;
   double _musicVolume = 1.0;
   double _sfxVolume = 1.0;
 
-  // Mapa de identificadores de sonido a rutas de assets
   final Map<String, String> _soundMap = {
     'menu_theme': 'music/menu_theme.mp3',
     'game_theme': 'music/game_theme.mp3',
@@ -28,12 +26,9 @@ class AudioManager {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
   }
 
-  // Getters para los volúmenes
   double get masterVolume => _masterVolume;
   double get musicVolume => _musicVolume;
   double get sfxVolume => _sfxVolume;
-
-  // Setters para los volúmenes
   void setMasterVolume(double value) {
     _masterVolume = value.clamp(0.0, 1.0);
     _updateVolumes();

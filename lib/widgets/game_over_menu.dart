@@ -17,6 +17,15 @@ class GameOverMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
+
+    // En landscape, usar altura como referencia para el ancho
+    final menuWidth = orientation == Orientation.landscape
+        ? size.height *
+              0.6 // 60% de la altura en horizontal
+        : 340.0; // Ancho fijo en vertical
+
     return Stack(
       children: [
         // Fondo borroso oscuro
@@ -26,123 +35,153 @@ class GameOverMenu extends StatelessWidget {
         ),
 
         Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(25),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                width: 340,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 25,
-                  vertical: 35,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade900.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1.5,
+          child: SingleChildScrollView(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  width: menuWidth,
+                  constraints: BoxConstraints(
+                    maxWidth: size.width * 0.9,
+                    maxHeight: size.height * 0.85,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
-                      blurRadius: 30,
-                      spreadRadius: 5,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 25,
+                    vertical: orientation == Orientation.landscape ? 20 : 35,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade900.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1.5,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // TÍTULO
-                    const Text(
-                      'GAME OVER',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 3,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 15,
-                            color: Colors.redAccent,
-                            offset: Offset(0, 0),
-                          ),
-                        ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 30,
+                        spreadRadius: 5,
                       ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // RAZÓN DEL FINAL
-                    Text(
-                      reason,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // PUNTUACIÓN
-                    Text(
-                      "Puntuación final: $score",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purpleAccent,
-                      ),
-                    ),
-
-                    const SizedBox(height: 35),
-
-                    // BOTÓN REINICIAR
-                    _buildNeonButton(
-                      label: 'REINICIAR',
-                      icon: Icons.refresh_rounded,
-                      color: const Color(0xFF00E676),
-                      onPressed: onRestart,
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
-
-                    const SizedBox(height: 15),
-
-                    // BOTÓN SALIR AL MENÚ
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: onReturnToMenu,
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 18,
-                        ),
-                        label: const Text(
-                          'SALIR AL MENÚ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.05),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
-                          side: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // TÍTULO
+                      Text(
+                        'GAME OVER',
+                        style: TextStyle(
+                          fontSize: orientation == Orientation.landscape
+                              ? 24
+                              : 32,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 3,
+                          shadows: const [
+                            Shadow(
+                              blurRadius: 15,
+                              color: Colors.redAccent,
+                              offset: Offset(0, 0),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+
+                      SizedBox(
+                        height: orientation == Orientation.landscape ? 15 : 25,
+                      ),
+
+                      // RAZÓN DEL FINAL
+                      Text(
+                        reason,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: orientation == Orientation.landscape
+                              ? 14
+                              : 16,
+                          color: Colors.white.withOpacity(0.85),
+                        ),
+                      ),
+
+                      SizedBox(
+                        height: orientation == Orientation.landscape ? 10 : 15,
+                      ),
+
+                      // PUNTUACIÓN
+                      Text(
+                        "Puntuación final: $score",
+                        style: TextStyle(
+                          fontSize: orientation == Orientation.landscape
+                              ? 18
+                              : 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purpleAccent,
+                        ),
+                      ),
+
+                      SizedBox(
+                        height: orientation == Orientation.landscape ? 20 : 35,
+                      ),
+
+                      // BOTÓN REINICIAR
+                      _buildNeonButton(
+                        label: 'REINICIAR',
+                        icon: Icons.refresh_rounded,
+                        color: const Color(0xFF00E676),
+                        onPressed: onRestart,
+                        isLandscape: orientation == Orientation.landscape,
+                      ),
+
+                      SizedBox(
+                        height: orientation == Orientation.landscape ? 10 : 15,
+                      ),
+
+                      Divider(
+                        color: Colors.white.withOpacity(0.1),
+                        thickness: 1,
+                      ),
+
+                      SizedBox(
+                        height: orientation == Orientation.landscape ? 10 : 15,
+                      ),
+
+                      // BOTÓN SALIR AL MENÚ
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: onReturnToMenu,
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'SALIR AL MENÚ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.05),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              vertical: orientation == Orientation.landscape
+                                  ? 12
+                                  : 16,
+                            ),
+                            elevation: 0,
+                            side: BorderSide(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -157,6 +196,7 @@ class GameOverMenu extends StatelessWidget {
     required IconData icon,
     required Color color,
     required VoidCallback onPressed,
+    bool isLandscape = false,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -166,7 +206,7 @@ class GameOverMenu extends StatelessWidget {
             ElevatedButton.styleFrom(
               backgroundColor: color.withOpacity(0.2),
               foregroundColor: color,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: isLandscape ? 12 : 16),
               elevation: 0,
               side: BorderSide(color: color.withOpacity(0.5), width: 1.5),
               shape: RoundedRectangleBorder(
@@ -181,13 +221,13 @@ class GameOverMenu extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon),
+            Icon(icon, size: isLandscape ? 20 : 24),
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: isLandscape ? 14 : 16,
                 letterSpacing: 1.2,
               ),
             ),

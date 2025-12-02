@@ -26,6 +26,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -66,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.symmetric(vertical: isLandscape ? 10 : 20),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(30),
                   child: BackdropFilter(
@@ -74,9 +77,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Container(
                       width: double.infinity,
                       constraints: const BoxConstraints(maxWidth: 400),
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 25,
-                        vertical: 40,
+                        vertical: isLandscape ? 20 : 40,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade900.withOpacity(0.75),
@@ -96,12 +99,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.equalizer_rounded,
-                            size: 50,
-                            color: Colors.white24,
-                          ),
-                          const SizedBox(height: 10),
+                          if (!isLandscape) ...[
+                            const Icon(
+                              Icons.equalizer_rounded,
+                              size: 50,
+                              color: Colors.white24,
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                           const Text(
                             'CONFIGURACIÓN',
                             style: TextStyle(
@@ -129,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 40),
+                          SizedBox(height: isLandscape ? 20 : 40),
 
                           _buildNeonSlider(
                             label: "Volumen General",
@@ -142,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             },
                           ),
 
-                          const SizedBox(height: 30),
+                          SizedBox(height: isLandscape ? 15 : 30),
 
                           _buildNeonSlider(
                             label: "Música",
@@ -155,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             },
                           ),
 
-                          const SizedBox(height: 30),
+                          SizedBox(height: isLandscape ? 15 : 30),
 
                           _buildNeonSlider(
                             label: "Efectos (SFX)",
