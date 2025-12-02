@@ -151,23 +151,27 @@ class _MenuScreenState extends State<MenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final bgImage = isLandscape
+        ? "assets/backgrounds/menu_h_bg.png"
+        : "assets/backgrounds/menu_bg.png";
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. IMAGEN DE FONDO (Sin blur, pixelada si es posible)
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/backgrounds/menu_bg.png"),
+                image: AssetImage(bgImage),
                 fit: BoxFit.cover,
-                filterQuality: FilterQuality.none, // Mantiene pixeles duros
+                filterQuality: FilterQuality.none,
               ),
             ),
           ),
 
-          // Efecto de oscurecimiento (scanline simple)
           Container(color: Colors.black.withOpacity(0.3)),
 
           SafeArea(
@@ -260,7 +264,6 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Widget _buildControlPanel() {
-    // Usamos el RetroBox en lugar de Blur+Rounded
     return RetroBox(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -296,7 +299,7 @@ class _MenuScreenState extends State<MenuScreen> {
           // BOTÓN JUGAR
           RetroButton(
             text: "INICIAR CARRERA",
-            color: const Color(0xFFAA0000), // Rojo oscuro retro
+            color: const Color(0xFFAA0000),
             onPressed: () async {
               await _stopMenuMusic();
               if (context.mounted) {

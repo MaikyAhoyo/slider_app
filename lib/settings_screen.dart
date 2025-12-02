@@ -26,6 +26,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final bgImage = isLandscape
+        ? "assets/backgrounds/menu_h_bg.png"
+        : "assets/backgrounds/menu_bg.png";
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -47,10 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.4,
-              child: Image.asset(
-                "assets/backgrounds/menu_bg.png",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset(bgImage, fit: BoxFit.cover),
             ),
           ),
 
