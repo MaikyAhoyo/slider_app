@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../ui/retro_ui.dart';
 
 class GameOverMenu extends StatelessWidget {
   final String reason;
@@ -18,222 +18,108 @@ class GameOverMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final orientation = MediaQuery.of(context).orientation;
-
-    // En landscape, usar altura como referencia para el ancho
-    final menuWidth = orientation == Orientation.landscape
-        ? size.height *
-              0.6 // 60% de la altura en horizontal
-        : 340.0; // Ancho fijo en vertical
+    final isLandscape = size.width > size.height;
+    final menuWidth = isLandscape ? size.height * 0.7 : 320.0;
 
     return Stack(
       children: [
-        // Fondo borroso oscuro
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(color: Colors.black.withOpacity(0.6)),
-        ),
+        // Fondo rojo semitransparente para dar sensación de peligro/muerte
+        Container(color: const Color(0xFF330000).withOpacity(0.8)),
 
         Center(
           child: SingleChildScrollView(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  width: menuWidth,
-                  constraints: BoxConstraints(
-                    maxWidth: size.width * 0.9,
-                    maxHeight: size.height * 0.85,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: orientation == Orientation.landscape ? 20 : 35,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade900.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1.5,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: menuWidth),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // TEXTO GAME OVER FLOTANDO FUERA DE LA CAJA
+                  Text(
+                    'GAME OVER',
+                    style: TextStyle(
+                      fontFamily: 'Courier',
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.red,
+                      letterSpacing: 5,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 0,
+                          color: Colors.black,
+                          offset: const Offset(4, 4),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // TÍTULO
-                      Text(
-                        'GAME OVER',
-                        style: TextStyle(
-                          fontSize: orientation == Orientation.landscape
-                              ? 24
-                              : 32,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 3,
-                          shadows: const [
-                            Shadow(
-                              blurRadius: 15,
-                              color: Colors.redAccent,
-                              offset: Offset(0, 0),
-                            ),
-                          ],
+
+                  const SizedBox(height: 20),
+
+                  // CAJA DE REPORTE DE MISIÓN
+                  RetroBox(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          "ESTADO DE MISIÓN:",
+                          style: getRetroStyle(color: Colors.grey, size: 12),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                        const SizedBox(height: 10),
 
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 15 : 25,
-                      ),
-
-                      // RAZÓN DEL FINAL
-                      Text(
-                        reason,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: orientation == Orientation.landscape
-                              ? 14
-                              : 16,
-                          color: Colors.white.withOpacity(0.85),
+                        Text(
+                          reason.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: getRetroStyle(size: 14, color: Colors.white),
                         ),
-                      ),
 
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 10 : 15,
-                      ),
-
-                      // PUNTUACIÓN
-                      Text(
-                        "Puntuación final: $score",
-                        style: TextStyle(
-                          fontSize: orientation == Orientation.landscape
-                              ? 18
-                              : 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purpleAccent,
+                        const SizedBox(height: 20),
+                        Container(
+                          color: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Column(
+                            children: [
+                              Text(
+                                "SCORE FINAL",
+                                style: getRetroStyle(
+                                  color: Colors.yellow,
+                                  size: 12,
+                                ),
+                              ),
+                              Text(
+                                score.toString().padLeft(
+                                  6,
+                                  '0',
+                                ), // Estilo arcade 000123
+                                style: const TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.greenAccent,
+                                  letterSpacing: 3,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 20 : 35,
-                      ),
+                        const SizedBox(height: 20),
 
-                      // BOTÓN REINICIAR
-                      _buildNeonButton(
-                        label: 'REINICIAR',
-                        icon: Icons.refresh_rounded,
-                        color: const Color(0xFF00E676),
-                        onPressed: onRestart,
-                        isLandscape: orientation == Orientation.landscape,
-                      ),
+                        RetroButton(text: "REINTENTAR", onPressed: onRestart),
 
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 10 : 15,
-                      ),
-
-                      Divider(
-                        color: Colors.white.withOpacity(0.1),
-                        thickness: 1,
-                      ),
-
-                      SizedBox(
-                        height: orientation == Orientation.landscape ? 10 : 15,
-                      ),
-
-                      // BOTÓN SALIR AL MENÚ
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
+                        RetroButton(
+                          text: "SALIR",
+                          color: Colors.grey.shade900,
                           onPressed: onReturnToMenu,
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            'SALIR AL MENÚ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.05),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              vertical: orientation == Orientation.landscape
-                                  ? 12
-                                  : 16,
-                            ),
-                            elevation: 0,
-                            side: BorderSide(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNeonButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-    bool isLandscape = false,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style:
-            ElevatedButton.styleFrom(
-              backgroundColor: color.withOpacity(0.2),
-              foregroundColor: color,
-              padding: EdgeInsets.symmetric(vertical: isLandscape ? 12 : 16),
-              elevation: 0,
-              side: BorderSide(color: color.withOpacity(0.5), width: 1.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              shadowColor: color.withOpacity(0.4),
-            ).copyWith(
-              overlayColor: MaterialStateProperty.resolveWith(
-                (states) => color.withOpacity(0.1),
-              ),
-            ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: isLandscape ? 20 : 24),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isLandscape ? 14 : 16,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
