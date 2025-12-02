@@ -43,20 +43,19 @@ class _GameScreenState extends State<GameScreen>
   late double roadWidth;
   late double screenWidth;
   late double screenHeight;
-  static const double spawnRate =
-      0.02; // Probabilidad de generar objeto por tick
+  static const double spawnRate = 0.095;
 
   // Estado del juego
   double _fuel = 100.0;
-  int _tires = 3; // Llantas (vidas)
-  int _coins = 0; // Monedas recolectadas
+  int _tires = 3;
+  int _coins = 0;
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
   double _carXOffset = 0.0;
 
   // Variables para scroll infinito y velocidad
-  double _gameSpeed = 5.0;
+  double _gameSpeed = 7.0;
   double _backgroundScrollOffset = 0.0;
 
   @override
@@ -94,7 +93,6 @@ class _GameScreenState extends State<GameScreen>
       final double halfRoadWidth = roadWidth / 2;
       final double minX = -(halfRoadWidth - width / 2);
       final double maxX = halfRoadWidth - width / 2;
-      final double randomX = minX + _random.nextDouble() * (maxX - minX);
 
       // Determinar posición inicial Y (avance)
       final orientation = MediaQuery.of(context).orientation;
@@ -109,21 +107,48 @@ class _GameScreenState extends State<GameScreen>
         startY = -100;
       }
 
-      _gameObjects.add(
-        GameObject(
-          x: randomX,
-          y: startY,
-          asset: randomObject,
-          width: width,
-          height: height,
-        ),
-      );
+      // --- LÓGICA DE NO SOBREPOSICIÓN ---
+      for (int attempt = 0; attempt < 15; attempt++) {
+        final double randomX = minX + _random.nextDouble() * (maxX - minX);
+
+        bool overlaps = false;
+
+        for (final obj in _gameObjects) {
+          if ((isLandscape && (obj.y - startY).abs() < 150) ||
+              (!isLandscape && (obj.y - startY).abs() < 150)) {
+            double margin = 8.0;
+
+            if (randomX < obj.x + obj.width + margin &&
+                randomX + width + margin > obj.x) {
+              overlaps = true;
+              break;
+            }
+          }
+        }
+        if (!overlaps) {
+          _gameObjects.add(
+            GameObject(
+              x: randomX,
+              y: startY,
+              asset: randomObject,
+              width: width,
+              height: height,
+            ),
+          );
+          break;
+        }
+      }
     }
   }
 
   /// Retorna un tipo de objeto aleatorio
   String _getRandomObject() {
     final double roll = _random.nextDouble();
+
+    if (_fuel < 15.0 && roll < 0.40) {
+      return 'assets/objects/gas.png';
+    }
+
     if (roll < 0.01) {
       return 'assets/objects/tire.png';
     } else if (roll < 0.11) {
@@ -186,8 +211,8 @@ class _GameScreenState extends State<GameScreen>
       if (isLandscape) {
         objScreenX = obj.y;
         objScreenY = (screenHeight / 2) + obj.x - (obj.width / 2);
-        objHitboxWidth = obj.height * 0.7;
-        objHitboxHeight = obj.width * 0.7;
+        objHitboxWidth = obj.width * 0.7;
+        objHitboxHeight = obj.height * 0.7;
       } else {
         objScreenX = (screenWidth / 2) + obj.x - (obj.width / 2);
         objScreenY = obj.y;
@@ -228,6 +253,7 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  /// Reproduce música dependiendo del fondo
   Future<void> _playMusic() async {
     String theme = 'game_theme';
     if (widget.backgroundAssetPath.contains('forest')) {
@@ -244,18 +270,33 @@ class _GameScreenState extends State<GameScreen>
     await _audioManager.playMusic(theme);
   }
 
+  /// Detiene la música
   Future<void> _stopMusic() async {
     await _audioManager.stopMusic();
   }
 
+  /// Reproduce un sonido
   Future<void> _playSound(String soundId) async {
     await _audioManager.playSfx(soundId);
   }
 
+  /// Actualiza la dificultad del juego
+  void _updateDifficulty() {
+    // Velocidad base: 5.0
+    // Aumenta 0.5 de velocidad por cada 300 monedas recolectadas
+    // Tope máximo de velocidad: 15.0
+    double newSpeed = 5.0 + (_coins / 300) * 0.5;
+    _gameSpeed = newSpeed.clamp(7.0, 15.0);
+  }
+
+  /// Actualiza el bucle del juego
   void _onGameLoopTick() {
     if (_isGameOver) return;
     setState(() {
       _fuel -= 0.05;
+
+      // Actualizar dificultad
+      _updateDifficulty();
 
       // Actualizar scroll del fondo
       _backgroundScrollOffset += _gameSpeed;
@@ -270,21 +311,25 @@ class _GameScreenState extends State<GameScreen>
       _spawnGameObject();
       _updateGameObjects();
       _checkCollisions();
+
       if (_fuel <= 0) _endGame("¡Sin gasolina!");
       if (_tires <= 0) _endGame("¡Sin llantas!");
     });
   }
 
+  /// Pausa el juego
   void _pauseGame() {
     setState(() => _isPaused = true);
     _gameLoopController.stop();
   }
 
+  /// Reanuda el juego
   void _resumeGame() {
     setState(() => _isPaused = false);
     _gameLoopController.repeat();
   }
 
+  /// Reinicia el juego
   void _restartGame() {
     setState(() {
       _fuel = 100.0;
@@ -300,6 +345,7 @@ class _GameScreenState extends State<GameScreen>
     _isPaused = false;
   }
 
+  /// Finaliza el juego
   void _endGame(String reason) {
     if (_isGameOver) return;
     _isGameOver = true;
@@ -359,7 +405,7 @@ class _GameScreenState extends State<GameScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Fondo dinámico con scroll infinito (Vertical)
+        // Fondo dinámico con scroll infinito (Horizontal hacia abajo)
         Positioned(
           top: _backgroundScrollOffset,
           left: 0,
@@ -367,6 +413,7 @@ class _GameScreenState extends State<GameScreen>
           height: screenHeight,
           child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
         ),
+        // Imagen 2 (inmediatamente después)
         Positioned(
           top: _backgroundScrollOffset - screenHeight,
           left: 0,
@@ -396,26 +443,6 @@ class _GameScreenState extends State<GameScreen>
           );
         }).toList(),
 
-        // Hitboxes (Opcional: comentar para producción)
-        /*
-        ..._gameObjects.map((obj) {
-          final double posX = (screenWidth / 2) + obj.x;
-          final double hitboxWidth = obj.width * 0.7;
-          final double hitboxHeight = obj.height * 0.7;
-          return Positioned(
-            left: posX - (hitboxWidth / 2),
-            top: obj.y,
-            child: Container(
-              width: hitboxWidth,
-              height: hitboxHeight,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
-            ),
-          );
-        }).toList(),
-        */
-
         // Carro
         Align(
           alignment: Alignment.bottomCenter,
@@ -431,23 +458,6 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
-
-        // Hitbox del carro (Opcional)
-        /*
-        Positioned(
-          left: (screenWidth / 2) + _carXOffset - (carWidth / 2),
-          bottom: 20,
-          child: IgnorePointer(
-            child: Container(
-              width: carWidth,
-              height: 70,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red, width: 2),
-              ),
-            ),
-          ),
-        ),
-        */
 
         // UI
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
@@ -481,7 +491,6 @@ class _GameScreenState extends State<GameScreen>
       fit: StackFit.expand,
       children: [
         // Fondo dinámico con scroll infinito (Horizontal hacia la izquierda)
-        // Imagen 1
         Positioned(
           left: -_backgroundScrollOffset,
           top: 0,
@@ -510,37 +519,14 @@ class _GameScreenState extends State<GameScreen>
           return Positioned(
             left: obj.y,
             top: posY - (obj.width / 2),
-            child: Transform.rotate(
-              angle: pi / 2,
-              child: Image.asset(
-                obj.asset,
-                width: obj.width,
-                height: obj.height,
-                fit: BoxFit.contain,
-              ),
+            child: Image.asset(
+              obj.asset,
+              width: obj.width,
+              height: obj.height,
+              fit: BoxFit.contain,
             ),
           );
         }).toList(),
-
-        // Hitboxes (Opcional)
-        /*
-        ..._gameObjects.map((obj) {
-          final double posY = (screenHeight / 2) + obj.x;
-          final double hitboxWidth = obj.height * 0.7;
-          final double hitboxHeight = obj.width * 0.7;
-          return Positioned(
-            left: obj.y,
-            top: posY - (hitboxHeight / 2),
-            child: Container(
-              width: hitboxWidth,
-              height: hitboxHeight,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
-            ),
-          );
-        }).toList(),
-        */
 
         // Carro
         Align(
@@ -560,23 +546,6 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
-
-        // Hitbox del carro (Opcional)
-        /*
-        Positioned(
-          left: 20,
-          top: (screenHeight / 2) + _carXOffset - (carWidth / 2),
-          child: IgnorePointer(
-            child: Container(
-              width: 70,
-              height: carWidth,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red, width: 2),
-              ),
-            ),
-          ),
-        ),
-        */
 
         // UI
         Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
@@ -611,64 +580,116 @@ class _GameScreenState extends State<GameScreen>
 
   Widget _buildGameUI() {
     return Container(
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(10),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0000AA), Color(0xFF000044)],
+        ),
+        border: Border.all(color: Colors.white, width: 2.0),
+        boxShadow: const [
+          BoxShadow(color: Colors.black54, offset: Offset(4, 4), blurRadius: 0),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.pause, color: Colors.white),
-            onPressed: () {
+          // --- BOTÓN PAUSA ---
+          GestureDetector(
+            onTap: () {
               setState(() {
                 _isPaused = !_isPaused;
               });
               _pauseGame();
             },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white54),
+                color: Colors.black26,
+              ),
+              child: const Icon(Icons.pause, color: Colors.white, size: 24),
+            ),
           ),
+
+          // --- MONEDAS ---
           Row(
             children: [
-              const Text('🪙', style: TextStyle(fontSize: 20)),
+              Text(
+                '\$',
+                style: TextStyle(
+                  color: Colors.yellow,
+                  fontSize: 20,
+                  fontFamily: 'Courier',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(width: 5),
               Text(
-                '$_coins',
+                '$_coins'.padLeft(3, '0'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
+                  fontFamily: 'Courier',
                   fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black, offset: Offset(2, 2))],
                 ),
               ),
             ],
           ),
+
+          // --- LLANTAS ---
           Row(
             children: [
-              const Icon(Icons.tire_repair, color: Colors.white),
+              const Icon(
+                Icons.tire_repair,
+                color: Colors.orangeAccent,
+                size: 20,
+              ),
               const SizedBox(width: 5),
               Text(
                 '$_tires',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
+                  fontFamily: 'Courier',
                   fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black, offset: Offset(2, 2))],
                 ),
               ),
             ],
           ),
+
+          // --- GASOLINA ---
           Row(
             children: [
-              const Icon(Icons.local_gas_station, color: Colors.white),
-              const SizedBox(width: 5),
-              SizedBox(
+              const Icon(
+                Icons.local_gas_station,
+                color: Colors.cyanAccent,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Container(
                 width: 100,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: _fuel / 100.0,
-                    backgroundColor: Colors.grey,
-                    color: _fuel > 20 ? Colors.green : Colors.red,
-                    minHeight: 15,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border.all(color: Colors.grey, width: 2),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (_fuel / 100.0).clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: _fuel > 20
+                            ? [Colors.greenAccent, Colors.green]
+                            : [Colors.redAccent, Colors.red],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
                   ),
                 ),
               ),

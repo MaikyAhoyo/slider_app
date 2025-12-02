@@ -26,9 +26,9 @@ class RetroBox extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.all(3), // Espacio para el borde
+      padding: const EdgeInsets.all(3),
       decoration: const BoxDecoration(
-        color: kRetroBorderShadow, // Sombra externa simulada
+        color: kRetroBorderShadow,
         boxShadow: [
           BoxShadow(color: Colors.black54, offset: Offset(4, 4), blurRadius: 0),
         ],
@@ -82,18 +82,16 @@ class RetroButton extends StatelessWidget {
           ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize
-              .min, // Se ajusta al texto o llena si lo pones en column stretch
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Mano señalando (cursor clásico)
             const Icon(Icons.arrow_right, color: Colors.white, size: 24),
             const SizedBox(width: 8),
             Text(
               text.toUpperCase(),
               style: const TextStyle(
                 color: Colors.white,
-                fontFamily: 'Courier', // Usa fuente monoespaciada por ahora
+                fontFamily: 'Courier',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -117,4 +115,70 @@ TextStyle getRetroStyle({double size = 16, Color color = Colors.white}) {
       Shadow(offset: Offset(2, 2), color: Colors.black, blurRadius: 0),
     ],
   );
+}
+
+// 4. VENTANA RETRO CON CABECERA
+class RetroWindow extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback? onClose;
+  final Widget child;
+  final double? width;
+  final double? height;
+
+  const RetroWindow({
+    super.key,
+    required this.title,
+    required this.icon,
+    this.onClose,
+    required this.child,
+    this.width,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RetroBox(
+      width: width,
+      height: height,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: Colors.white, size: 28),
+              Text(
+                title.toUpperCase(),
+                style: getRetroStyle(size: 24, color: Colors.yellowAccent),
+              ),
+              if (onClose != null)
+                GestureDetector(
+                  onTap: onClose,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white),
+                      color: Colors.red,
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              else
+                const SizedBox(width: 20),
+            ],
+          ),
+          const SizedBox(height: 5),
+          const Divider(color: Colors.white, thickness: 2),
+          const SizedBox(height: 10),
+
+          Flexible(child: child),
+        ],
+      ),
+    );
+  }
 }

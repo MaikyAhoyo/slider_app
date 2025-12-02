@@ -26,7 +26,7 @@ class _DraggableCarState extends State<DraggableCar> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calcula los límites para que el carro no salga de la pantalla
-        final maxWidth = constraints.maxWidth;
+        final maxWidth = constraints.maxWidth * 0.8;
         final carHalfWidth = widget.width / 2;
 
         // Limita la posición entre los bordes

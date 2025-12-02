@@ -97,28 +97,29 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
               const SizedBox(height: 20),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      "CANCELAR",
-                      style: getRetroStyle(color: Colors.red),
+                  Expanded(
+                    child: RetroButton(
+                      text: "CANCELAR",
+                      color: Colors.red.shade900,
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        playerName = _controller.text.isNotEmpty
-                            ? _controller.text
-                            : "Jugador";
-                      });
-                      _storage.savePlayerName(playerName);
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      "OK",
-                      style: getRetroStyle(color: Colors.green),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RetroButton(
+                      text: "OK",
+                      color: Colors.green.shade900,
+                      onPressed: () {
+                        setState(() {
+                          playerName = _controller.text.isNotEmpty
+                              ? _controller.text
+                              : "Jugador";
+                        });
+                        _storage.savePlayerName(playerName);
+                        Navigator.pop(context);
+                      },
                     ),
                   ),
                 ],

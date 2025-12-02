@@ -20,15 +20,12 @@ class PauseMenu extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final isLandscape = size.width > size.height;
 
-    // Ancho del menú ajustado al estilo retro
     final menuWidth = isLandscape ? size.height * 0.7 : 300.0;
 
     return Stack(
       children: [
-        // 1. Fondo Oscuro (Sin Blur, estilo PS1 pausa simple)
         Container(color: Colors.black.withOpacity(0.7)),
 
-        // 2. Patrón de líneas opcional (Scanlines falsas)
         IgnorePointer(
           child: Container(
             decoration: BoxDecoration(
@@ -47,39 +44,14 @@ class PauseMenu extends StatelessWidget {
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: menuWidth),
-              child: RetroBox(
+              child: RetroWindow(
+                title: 'PAUSA',
+                icon: Icons.pause_circle_filled,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // TÍTULO CON SOMBRA DURA
-                    Text(
-                      'PAUSA',
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 5,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.blue.shade900,
-                            offset: const Offset(3, 3),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 5),
-                    const Divider(color: Colors.white54, thickness: 2),
-                    const SizedBox(height: 20),
-
                     // BOTONES RETRO
-                    RetroButton(
-                      text: "CONTINUAR",
-                      onPressed: onResume,
-                      // Sin color específico para usar el default (negro/borde blanco)
-                    ),
+                    RetroButton(text: "CONTINUAR", onPressed: onResume),
 
                     RetroButton(text: "REINICIAR", onPressed: onRestart),
 
@@ -92,7 +64,7 @@ class PauseMenu extends StatelessWidget {
                     // BOTÓN SALIR (Rojo)
                     RetroButton(
                       text: "SALIR AL MENU",
-                      color: const Color(0xFFAA0000), // Rojo oscuro
+                      color: const Color(0xFFAA0000),
                       onPressed: onQuit,
                     ),
                   ],
