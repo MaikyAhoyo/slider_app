@@ -41,8 +41,10 @@ class _GameScreenState extends State<GameScreen>
   late double roadWidth;
   late double screenWidth;
   late double screenHeight;
-  static const double spawnRate =
-      0.02; // Probabilidad de generar objeto por tick
+  
+  // CAMBIO 1: Aumentamos la tasa de aparición (de 0.02 a 0.05)
+  // Como ahora filtramos los que chocan, necesitamos intentar generar más seguido
+  static const double spawnRate = 0.095; 
 
   // Estado del juego
   double _fuel = 100.0;
@@ -51,6 +53,7 @@ class _GameScreenState extends State<GameScreen>
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
+  double _gameSpeed = 7.0;
   double _carXOffset = 0.0;
 
   /// Inicializa el estado del juego
@@ -76,7 +79,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Genera objetos aleatoriamente en la carretera
-  void _spawnGameObject() {
+   void _spawnGameObject() {
     if (_random.nextDouble() < spawnRate) {
       final String randomObject = _getRandomObject();
       double width = 50;
@@ -89,36 +92,70 @@ class _GameScreenState extends State<GameScreen>
       final double halfRoadWidth = roadWidth / 2;
       final double minX = -(halfRoadWidth - width / 2);
       final double maxX = halfRoadWidth - width / 2;
-      final double randomX = minX + _random.nextDouble() * (maxX - minX);
-
+      
       // Determinar posición inicial Y (avance)
       final orientation = MediaQuery.of(context).orientation;
       final bool isLandscape = orientation == Orientation.landscape;
 
       double startY;
       if (isLandscape) {
-        // En landscape, empiezan a la derecha (screenWidth)
         startY = screenWidth + 100;
       } else {
-        // En portrait, empiezan arriba (-100)
         startY = -100;
       }
 
-      _gameObjects.add(
-        GameObject(
-          x: randomX,
-          y: startY,
-          asset: randomObject,
-          width: width,
-          height: height,
-        ),
-      );
+      // --- NUEVA LÓGICA DE NO SOBREPOSICIÓN ---
+      // CAMBIO 2: Aumentamos los intentos de 5 a 15
+      // Esto asegura que si hay espacio, el código lo encuentre
+      for (int attempt = 0; attempt < 15; attempt++) {
+        final double randomX = minX + _random.nextDouble() * (maxX - minX);
+        
+        bool overlaps = false;
+        
+        // Revisar colisión con objetos existentes recién generados
+        for (final obj in _gameObjects) {
+          // Solo nos importan los objetos que están cerca del punto de spawn
+          // (ej. a menos de 150 pixeles de distancia en Y)
+          if ((isLandscape && (obj.y - startY).abs() < 150) || 
+              (!isLandscape && (obj.y - startY).abs() < 150)) {
+            
+            // Chequeo simple de superposición en el eje X (con un margen de seguridad)
+            double margin = 8.0; // Espacio mínimo entre objetos
+            
+            if (randomX < obj.x + obj.width + margin && 
+                randomX + width + margin > obj.x) {
+              overlaps = true;
+              break; 
+            }
+          }
+        }
+
+        // Si no se sobrepone, agregamos el objeto y terminamos
+        if (!overlaps) {
+          _gameObjects.add(
+            GameObject(
+              x: randomX,
+              y: startY,
+              asset: randomObject,
+              width: width,
+              height: height,
+            ),
+          );
+          break; // Salir del bucle de intentos
+        }
+        // Si se sobrepone, el bucle 'for' intentará de nuevo con otra X
+      }
     }
   }
 
   /// Retorna un tipo de objeto aleatorio
   String _getRandomObject() {
     final double roll = _random.nextDouble();
+
+    if (_fuel <15.0 && roll < 0.40) {
+      return 'assets/objects/gas.png';
+    }
+
     if (roll < 0.01) {
       return 'assets/objects/tire.png';
     } else if (roll < 0.11) {
@@ -133,19 +170,19 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Actualiza la posición de los objetos
-  void _updateGameObjects() {
+ void _updateGameObjects() {
     final double screenHeight = MediaQuery.of(context).size.height;
     final orientation = MediaQuery.of(context).orientation;
     final bool isLandscape = orientation == Orientation.landscape;
 
     for (var i = _gameObjects.length - 1; i >= 0; i--) {
       if (isLandscape) {
-        _gameObjects[i].y -= 5;
+        _gameObjects[i].y -= _gameSpeed; // <--- CAMBIO AQUÍ (antes era 5)
         if (_gameObjects[i].y < -100) {
           _gameObjects.removeAt(i);
         }
       } else {
-        _gameObjects[i].y += 5;
+        _gameObjects[i].y += _gameSpeed; // <--- CAMBIO AQUÍ (antes era 5)
         if (_gameObjects[i].y > screenHeight) {
           _gameObjects.removeAt(i);
         }
@@ -238,11 +275,27 @@ class _GameScreenState extends State<GameScreen>
     await _audioManager.playSfx(soundId);
   }
 
+
+  void _updateDifficulty() {
+    // Velocidad base: 5.0
+    // Aumenta 0.5 de velocidad por cada 100 monedas recolectadas
+    // Tope máximo de velocidad: 15.0
+    double newSpeed = 5.0 + (_coins / 100) * 0.35;
+    
+    // Opcional: Aumentar también el consumo de gasolina si va muy rápido
+    // _fuelConsumption = 0.05 + (_coins / 500) * 0.01;
+
+    _gameSpeed = newSpeed.clamp(7.0, 30.0);
+  }
+
+
   /// Ejecuta el bucle del juego
   void _onGameLoopTick() {
     if (_isGameOver) return;
     setState(() {
       _fuel -= 0.05;
+      _updateDifficulty(); // <--- NUEVO: Actualizar velocidad
+
       _spawnGameObject();
       _updateGameObjects();
       _checkCollisions();
@@ -270,6 +323,7 @@ class _GameScreenState extends State<GameScreen>
       _tires = 3;
       _coins = 0;
       _isGameOver = false;
+      _gameSpeed = 7.0;
     });
     _gameLoopController.reset();
     _gameLoopController.repeat();
@@ -377,13 +431,16 @@ class _GameScreenState extends State<GameScreen>
           alignment: Alignment.bottomCenter,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
-            child: DraggableCar(
-              imagePath: widget.carAssetPath,
-              width: carWidth,
-              height: 70,
-              onPositionChanged: (value) {
-                _carXOffset = value;
-              },
+            child: SizedBox(
+              width: roadWidth+15.0,
+              child: DraggableCar(
+                imagePath: widget.carAssetPath,
+                width: carWidth,
+                height: 70,
+                onPositionChanged: (value) {
+                  _carXOffset = value;
+                },
+              ),
             ),
           ),
         ),
@@ -461,12 +518,13 @@ class _GameScreenState extends State<GameScreen>
         }).toList(),
 
         // Carro
-        Align(
+       Align(
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(left: 20.0),
             child: SizedBox(
-              height: roadWidth,
+              height: roadWidth+ 15.0, // <--- ESTO YA ESTABA, PERO ASEGURA EL LÍMITE
+              width: 70, // Ancho del área táctil (largo del carro)
               child: DraggableCarHorizontal(
                 imagePath: widget.carAssetPath,
                 width: 70,
