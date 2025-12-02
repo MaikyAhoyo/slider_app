@@ -40,8 +40,11 @@ class _CarsScreenState extends State<CarsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final bgImage = isLandscape
+        ? "assets/backgrounds/menu_h_bg.png"
+        : "assets/backgrounds/menu_bg.png";
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -66,11 +69,8 @@ class _CarsScreenState extends State<CarsScreen> {
           // Fondo
           Positioned.fill(
             child: Opacity(
-              opacity: 0.5,
-              child: Image.asset(
-                "assets/backgrounds/menu_bg.png",
-                fit: BoxFit.cover,
-              ),
+              opacity: 0.4,
+              child: Image.asset(bgImage, fit: BoxFit.cover),
             ),
           ),
 
