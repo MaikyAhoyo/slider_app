@@ -162,24 +162,22 @@ class GameOverMenu extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.2),
-          foregroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          elevation: 0,
-          side: BorderSide(
-            color: color.withOpacity(0.5),
-            width: 1.5,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          shadowColor: color.withOpacity(0.4),
-        ).copyWith(
-          overlayColor: MaterialStateProperty.resolveWith(
-            (states) => color.withOpacity(0.1),
-          ),
-        ),
+        style:
+            ElevatedButton.styleFrom(
+              backgroundColor: color.withOpacity(0.2),
+              foregroundColor: color,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 0,
+              side: BorderSide(color: color.withOpacity(0.5), width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              shadowColor: color.withOpacity(0.4),
+            ).copyWith(
+              overlayColor: MaterialStateProperty.resolveWith(
+                (states) => color.withOpacity(0.1),
+              ),
+            ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
