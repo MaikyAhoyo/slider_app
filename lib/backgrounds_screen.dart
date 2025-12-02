@@ -23,6 +23,7 @@ class BackgroundStyles extends StatefulWidget {
 
 class _BackgroundStylesState extends State<BackgroundStyles> {
   late String _selectedBackground;
+  bool _isLoading = true;
 
   final List<BackgroundOption> _backgroundOptions = [
     BackgroundOption(
@@ -46,11 +47,34 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
   @override
   void initState() {
     super.initState();
-    _selectedBackground = widget.currentBackground;
+    _loadInitialBackground();
+  }
+
+  Future<void> _loadInitialBackground() async {
+    final storage = StorageService();
+    await storage.init();
+
+    // Cargar lo guardado si existe, si no el valor que venía del constructor
+    _selectedBackground = storage.getSelectedBackground().isNotEmpty
+        ? storage.getSelectedBackground()
+        : widget.currentBackground;
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.greenAccent),
+        ),
+      );
+    }
+
     final size = MediaQuery.of(context).size;
     final isLandscape = size.width > size.height;
 
@@ -75,7 +99,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
       body: Stack(
         children: [
-          // Fondo del menú
           Positioned.fill(
             child: Opacity(
               opacity: 0.5,
@@ -108,7 +131,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
                   const SizedBox(height: 20),
 
-                  // GRID
                   Expanded(
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -120,8 +142,7 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
                       itemCount: _backgroundOptions.length,
                       itemBuilder: (context, index) {
                         final bg = _backgroundOptions[index];
-                        final isSelected =
-                            bg.assetPath == _selectedBackground;
+                        final isSelected = bg.assetPath == _selectedBackground;
 
                         return _buildRetroBackgroundSlot(bg, isSelected);
                       },
@@ -136,14 +157,14 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
     );
   }
 
-  Widget _buildRetroBackgroundSlot(
-      BackgroundOption bg, bool isSelected) {
+  Widget _buildRetroBackgroundSlot(BackgroundOption bg, bool isSelected) {
     return GestureDetector(
       onTap: () async {
         setState(() {
           _selectedBackground = bg.assetPath;
         });
 
+        // Guardar en SharedPreferences
         await StorageService().saveSelectedBackground(bg.assetPath);
       },
       child: Container(
@@ -157,7 +178,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
         padding: const EdgeInsets.all(8),
         child: Row(
           children: [
-            // Preview del fondo
             Container(
               width: 80,
               height: 60,
@@ -171,7 +191,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
             const SizedBox(width: 15),
 
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
