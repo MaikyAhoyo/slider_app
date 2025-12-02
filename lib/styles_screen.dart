@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ui/retro_ui.dart';
+import 'services/storage_service.dart';
 
 class CarOption {
   final String name;
@@ -51,7 +52,9 @@ class _StylesScreenState extends State<StylesScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(_selectedCarAsset),
+          onPressed: () {
+            Navigator.of(context).pop(_selectedCarAsset);
+          },
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(2.0),
@@ -123,10 +126,11 @@ class _StylesScreenState extends State<StylesScreen> {
 
   Widget _buildRetroCarSlot(CarOption car, bool isSelected) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         setState(() {
           _selectedCarAsset = car.assetPath;
         });
+        await StorageService().saveSelectedCar(car.assetPath);
       },
       child: Container(
         decoration: BoxDecoration(
