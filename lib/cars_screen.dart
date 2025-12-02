@@ -48,22 +48,6 @@ class _CarsScreenState extends State<CarsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: kRetroBlueTop,
-        elevation: 0,
-        title: Text("GARAJE", style: getRetroStyle(size: 24)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop(_selectedCarAsset);
-          },
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(color: Colors.white, height: 2),
-        ),
-      ),
       body: Stack(
         children: [
           // Fondo
@@ -74,48 +58,60 @@ class _CarsScreenState extends State<CarsScreen> {
             ),
           ),
 
-          Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  RetroBox(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Colors.greenAccent,
+          SafeArea(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 800),
+                padding: const EdgeInsets.all(16),
+                child: RetroWindow(
+                  title: 'GARAJE',
+                  icon: Icons.directions_car,
+                  onClose: () => Navigator.of(context).pop(_selectedCarAsset),
+                  child: Column(
+                    children: [
+                      RetroBox(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Colors.greenAccent,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              "SELECCIONAR UNIDAD",
+                              style: getRetroStyle(size: 14),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "SELECCIONAR UNIDAD",
-                          style: getRetroStyle(size: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // LISTA GRID
-                  Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: isLandscape ? 2 : 1,
-                        childAspectRatio: 2.8,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
                       ),
-                      itemCount: _carOptions.length,
-                      itemBuilder: (context, index) {
-                        final car = _carOptions[index];
-                        final isSelected = car.assetPath == _selectedCarAsset;
-                        return _buildRetroCarSlot(car, isSelected);
-                      },
-                    ),
+                      const SizedBox(height: 20),
+
+                      // LISTA GRID
+                      Expanded(
+                        child: RetroBox(
+                          padding: const EdgeInsets.all(8),
+                          child: GridView.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isLandscape ? 2 : 1,
+                                  childAspectRatio: 2.8,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                            itemCount: _carOptions.length,
+                            itemBuilder: (context, index) {
+                              final car = _carOptions[index];
+                              final isSelected =
+                                  car.assetPath == _selectedCarAsset;
+                              return _buildRetroCarSlot(car, isSelected);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:slider_app/backgrounds_screen.dart';
 import 'services/supabase_service.dart';
 import 'services/audio_manager.dart';
 import 'game_screen.dart';
@@ -22,6 +23,7 @@ class _MenuScreenState extends State<MenuScreen> {
 
   late final SupabaseService _supabaseService;
   String _selectedCarAsset = 'assets/cars/orange_car.png';
+  String _selectedBackgroundAsset = 'assets/backgrounds/forest_bg.png';
   final AudioManager _audioManager = AudioManager.instance;
 
   @override
@@ -95,28 +97,29 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
               const SizedBox(height: 20),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      "CANCELAR",
-                      style: getRetroStyle(color: Colors.red),
+                  Expanded(
+                    child: RetroButton(
+                      text: "CANCELAR",
+                      color: Colors.red.shade900,
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        playerName = _controller.text.isNotEmpty
-                            ? _controller.text
-                            : "Jugador";
-                      });
-                      _storage.savePlayerName(playerName);
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      "OK",
-                      style: getRetroStyle(color: Colors.green),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RetroButton(
+                      text: "OK",
+                      color: Colors.green.shade900,
+                      onPressed: () {
+                        setState(() {
+                          playerName = _controller.text.isNotEmpty
+                              ? _controller.text
+                              : "Jugador";
+                        });
+                        _storage.savePlayerName(playerName);
+                        Navigator.pop(context);
+                      },
                     ),
                   ),
                 ],
@@ -138,6 +141,21 @@ class _MenuScreenState extends State<MenuScreen> {
     if (newCar != null && newCar is String) {
       setState(() {
         _selectedCarAsset = newCar;
+      });
+    }
+  }
+
+  void _openBackgrounds() async {
+    final newBackground = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            BackgroundStyles(currentBackground: _selectedBackgroundAsset),
+      ),
+    );
+    if (newBackground != null && newBackground is String) {
+      setState(() {
+        _selectedBackgroundAsset = newBackground;
       });
     }
   }
@@ -310,6 +328,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       playerName: playerName,
                       supabaseService: _supabaseService,
                       carAssetPath: _selectedCarAsset,
+                      backgroundAssetPath: _selectedBackgroundAsset,
                     ),
                   ),
                 );
@@ -322,6 +341,7 @@ class _MenuScreenState extends State<MenuScreen> {
 
           // BOTONES SECUNDARIOS
           RetroButton(text: "GARAJE", onPressed: _openCars),
+          RetroButton(text: "ESCENARIOS", onPressed: _openBackgrounds),
           RetroButton(text: "CONFIG", onPressed: _openSettings),
         ],
       ),

@@ -5,17 +5,12 @@ import 'services/storage_service.dart';
 class BackgroundOption {
   final String name;
   final String assetPath;
-
   BackgroundOption({required this.name, required this.assetPath});
 }
 
 class BackgroundStyles extends StatefulWidget {
   final String currentBackground;
-
-  const BackgroundStyles({
-    super.key,
-    required this.currentBackground,
-  });
+  const BackgroundStyles({super.key, required this.currentBackground});
 
   @override
   State<BackgroundStyles> createState() => _BackgroundStylesState();
@@ -27,26 +22,28 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
   final List<BackgroundOption> _backgroundOptions = [
     BackgroundOption(
-      name: 'CITY NIGHT',
-      assetPath: 'assets/backgrounds/city_night.png',
+      name: 'FOREST',
+      assetPath: 'assets/backgrounds/forest_bg.png',
     ),
     BackgroundOption(
-      name: 'RETRO GRID',
-      assetPath: 'assets/backgrounds/retro_grid.png',
+      name: 'NORTH POLE',
+      assetPath: 'assets/backgrounds/snow_bg.png',
     ),
     BackgroundOption(
-      name: 'SUNSET ROAD',
-      assetPath: 'assets/backgrounds/sunset_road.png',
+      name: 'HAUNTED FOREST',
+      assetPath: 'assets/backgrounds/haunted_forest_bg.png',
     ),
+    BackgroundOption(name: 'MARS', assetPath: 'assets/backgrounds/mars_bg.png'),
     BackgroundOption(
-      name: 'NEON TUNNEL',
-      assetPath: 'assets/backgrounds/neon_tunnel.png',
+      name: 'UNDERWATER',
+      assetPath: 'assets/backgrounds/underwater_bg.png',
     ),
   ];
 
   @override
   void initState() {
     super.initState();
+    _selectedBackground = widget.currentBackground;
     _loadInitialBackground();
   }
 
@@ -54,7 +51,6 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
     final storage = StorageService();
     await storage.init();
 
-    // Cargar lo guardado si existe, si no el valor que venía del constructor
     _selectedBackground = storage.getSelectedBackground().isNotEmpty
         ? storage.getSelectedBackground()
         : widget.currentBackground;
@@ -66,6 +62,12 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final bgImage = isLandscape
+        ? "assets/backgrounds/menu_h_bg.png"
+        : "assets/backgrounds/menu_bg.png";
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: Colors.black,
@@ -75,80 +77,105 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
       );
     }
 
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
-
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: kRetroBlueTop,
-        elevation: 0,
-        title: Text("FONDOS", style: getRetroStyle(size: 24)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop(_selectedBackground);
-          },
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(color: Colors.white, height: 2),
-        ),
-      ),
-
       body: Stack(
         children: [
+          // Fondo
           Positioned.fill(
             child: Opacity(
-              opacity: 0.5,
-              child: Image.asset(
-                "assets/backgrounds/menu_bg.png",
-                fit: BoxFit.cover,
-              ),
+              opacity: 0.4,
+              child: Image.asset(bgImage, fit: BoxFit.cover),
             ),
           ),
 
-          Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  RetroBox(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image, color: Colors.greenAccent),
-                        const SizedBox(width: 10),
-                        Text(
-                          "SELECCIONAR FONDO",
-                          style: getRetroStyle(size: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: isLandscape ? 2 : 1,
-                        childAspectRatio: 2.8,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+          SafeArea(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 800),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // CABECERA RETRO
+                    RetroBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(
+                            Icons.image,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          Text(
+                            'FONDOS',
+                            style: getRetroStyle(
+                              size: 24,
+                              color: Colors.yellowAccent,
+                            ),
+                          ),
+                          // Botón cerrar "X" estilo ventana clásica
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).pop(_selectedBackground);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.white),
+                                color: Colors.red,
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      itemCount: _backgroundOptions.length,
-                      itemBuilder: (context, index) {
-                        final bg = _backgroundOptions[index];
-                        final isSelected = bg.assetPath == _selectedBackground;
-
-                        return _buildRetroBackgroundSlot(bg, isSelected);
-                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+
+                    RetroBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.image, color: Colors.greenAccent),
+                          const SizedBox(width: 10),
+                          Text(
+                            "SELECCIONAR FONDO",
+                            style: getRetroStyle(size: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Expanded(
+                      child: RetroBox(
+                        padding: const EdgeInsets.all(8),
+                        child: GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: isLandscape ? 2 : 1,
+                                childAspectRatio: 2.8,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemCount: _backgroundOptions.length,
+                          itemBuilder: (context, index) {
+                            final bg = _backgroundOptions[index];
+                            final isSelected =
+                                bg.assetPath == _selectedBackground;
+
+                            return _buildRetroBackgroundSlot(bg, isSelected);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

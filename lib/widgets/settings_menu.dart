@@ -34,58 +34,19 @@ class _SettingsMenuState extends State<SettingsMenu> {
 
     return Stack(
       children: [
-        // Fondo oscuro
         Container(color: Colors.black.withOpacity(0.7)),
 
         Center(
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: menuWidth),
-              child: RetroBox(
+              child: RetroWindow(
+                title: 'AJUSTES',
+                icon: Icons.settings,
+                onClose: widget.onBack,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // CABECERA
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Icon(
-                          Icons.settings,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        Text(
-                          'AJUSTES',
-                          style: getRetroStyle(
-                            size: 24,
-                            color: Colors.yellowAccent,
-                          ),
-                        ),
-                        // Botón cerrar "X" estilo ventana clásica
-                        GestureDetector(
-                          onTap: widget.onBack,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white),
-                              color: Colors.red,
-                            ),
-                            padding: const EdgeInsets.all(2),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(
-                      color: Colors.white,
-                      thickness: 2,
-                      height: 20,
-                    ),
-
-                    // SLIDERS
                     _buildRetroSlider(
                       label: "MASTER",
                       value: _masterVolume,
@@ -117,7 +78,6 @@ class _SettingsMenuState extends State<SettingsMenu> {
 
                     const SizedBox(height: 25),
 
-                    // BOTÓN VOLVER GRANDE
                     RetroButton(text: "VOLVER", onPressed: widget.onBack),
                   ],
                 ),
@@ -156,9 +116,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
               activeTrackColor: Colors.green,
               inactiveTrackColor: Colors.black54,
               thumbColor: Colors.white,
-              thumbShape: const RoundSliderThumbShape(
-                enabledThumbRadius: 0,
-              ), // Sin bolita (estilo barra de progreso)
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 0),
               overlayShape: SliderComponentShape.noOverlay,
               trackShape: const RectangularSliderTrackShape(),
             ),
