@@ -71,16 +71,18 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
           // Contenido centrado
           Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(color: Colors.white),
-                const SizedBox(height: 20),
-                Text(
-                  'Cargando datos del circuito...',
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(color: Colors.white),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Cargando datos del circuito...',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

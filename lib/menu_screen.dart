@@ -127,9 +127,7 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ),
 
-          // 2. DEGRADADO (Mejor que un color sólido)
-          // Esto oscurece solo la parte de abajo para que se lean los botones
-          // y deja la parte de arriba (el cielo) más clara.
+          // 2. DEGRADADO
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -147,180 +145,223 @@ class _MenuScreenState extends State<MenuScreen> {
 
           // 3. CONTENIDO SEGURO (SafeArea)
           SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isLandscape =
+                    constraints.maxWidth > constraints.maxHeight;
 
-                // --- TÍTULO (Arriba) ---
-                Text(
-                  "CAR RACERS",
-                  style: TextStyle(
-                    fontSize: 48, // Un poco más ajustado
-                    fontStyle: FontStyle.italic, // Cursiva da velocidad
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 2,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 20,
-                        color: Colors.blueAccent.shade700,
-                        offset: const Offset(0, 0),
-                      ),
-                      Shadow(
-                        blurRadius: 10,
-                        color: Colors.redAccent.shade700,
-                        offset: const Offset(0, 0),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ESPACIO FLEXIBLE
-                // Esto empuja el menú hacia abajo para que se vea el coche
-                const Spacer(),
-
-                // --- PANEL DE CONTROL (Abajo) ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(25),
-                        width: double.infinity, // Ocupa el ancho disponible
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4), // Vidrio oscuro
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
+                if (isLandscape) {
+                  // --- LAYOUT HORIZONTAL (LANDSCAPE) ---
+                  return Row(
+                    children: [
+                      // Izquierda: Título y Espacio
+                      Expanded(
+                        flex: 4,
+                        child: Center(
+                          child: Text(
+                            "CAR\nRACERS",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 48,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                              height: 0.9,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 20,
+                                  color: Colors.blueAccent.shade700,
+                                  offset: const Offset(0, 0),
+                                ),
+                                Shadow(
+                                  blurRadius: 10,
+                                  color: Colors.redAccent.shade700,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 1. FILA DE JUGADOR (Nombre + Editar)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.person,
-                                  color: Colors.white70,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  playerName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                // Botón pequeño para editar
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.blueAccent,
-                                    size: 20,
-                                  ),
-                                  onPressed: _changeName,
-                                  tooltip: "Cambiar nombre",
-                                ),
-                              ],
+                      ),
+
+                      // Derecha: Panel de Control
+                      Expanded(
+                        flex: 5,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 40),
+                              child: _buildControlPanel(isLandscape: true),
                             ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // --- LAYOUT VERTICAL (PORTRAIT) ---
+                  return Column(
+                    children: [
+                      const SizedBox(height: 20),
 
-                            const SizedBox(height: 20),
-
-                            // 2. BOTÓN JUGAR (Gigante y llamativo)
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await _stopMenuMusic();
-                                  if (context.mounted) {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => GameScreen(
-                                          playerName: playerName,
-                                          supabaseService: _supabaseService,
-                                          carAssetPath: _selectedCarAsset,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  _playMenuMusic();
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(
-                                    0xFFFF3B30,
-                                  ), // Rojo intenso estilo Ferrari
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 20,
-                                  ),
-                                  elevation: 10,
-                                  shadowColor: Colors.redAccent.withOpacity(
-                                    0.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "JUGAR",
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 2,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ),
+                      // TÍTULO
+                      Text(
+                        "CAR RACERS",
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 20,
+                              color: Colors.blueAccent.shade700,
+                              offset: const Offset(0, 0),
                             ),
-
-                            const SizedBox(height: 25),
-
-                            // 3. BOTONES SECUNDARIOS (En fila)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                // Botón Estilos
-                                _buildMenuButton(
-                                  icon: Icons.palette_outlined,
-                                  label: "Estilos",
-                                  onPressed: _openStyles,
-                                ),
-                                // Línea divisoria
-                                Container(
-                                  height: 20,
-                                  width: 1,
-                                  color: Colors.white24,
-                                ),
-                                // Botón Configuración
-                                _buildMenuButton(
-                                  icon: Icons.settings_outlined,
-                                  label: "Ajustes",
-                                  onPressed: _openSettings,
-                                ),
-                              ],
+                            Shadow(
+                              blurRadius: 10,
+                              color: Colors.redAccent.shade700,
+                              offset: const Offset(0, 0),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ],
+
+                      const Spacer(),
+
+                      // PANEL DE CONTROL
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 30,
+                        ),
+                        child: _buildControlPanel(isLandscape: false),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildControlPanel({required bool isLandscape}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(25),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. FILA DE JUGADOR
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.person, color: Colors.white70, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    playerName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Colors.blueAccent,
+                      size: 20,
+                    ),
+                    onPressed: _changeName,
+                    tooltip: "Cambiar nombre",
+                  ),
+                ],
+              ),
+
+              SizedBox(height: isLandscape ? 10 : 20),
+
+              // 2. BOTÓN JUGAR
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _stopMenuMusic();
+                    if (context.mounted) {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GameScreen(
+                            playerName: playerName,
+                            supabaseService: _supabaseService,
+                            carAssetPath: _selectedCarAsset,
+                          ),
+                        ),
+                      );
+                    }
+                    _playMenuMusic();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF3B30),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      vertical: isLandscape ? 15 : 20,
+                    ),
+                    elevation: 10,
+                    shadowColor: Colors.redAccent.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    "JUGAR",
+                    style: TextStyle(
+                      fontSize: isLandscape ? 22 : 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: isLandscape ? 15 : 25),
+
+              // 3. BOTONES SECUNDARIOS
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildMenuButton(
+                    icon: Icons.palette_outlined,
+                    label: "Estilos",
+                    onPressed: _openStyles,
+                  ),
+                  Container(height: 20, width: 1, color: Colors.white24),
+                  _buildMenuButton(
+                    icon: Icons.settings_outlined,
+                    label: "Ajustes",
+                    onPressed: _openSettings,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
