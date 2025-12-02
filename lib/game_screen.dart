@@ -152,7 +152,7 @@ class _GameScreenState extends State<GameScreen>
   String _getRandomObject() {
     final double roll = _random.nextDouble();
 
-    if (_fuel <12.0 && roll < 0.18) {
+    if (_fuel <15.0 && roll < 0.40) {
       return 'assets/objects/gas.png';
     }
 
