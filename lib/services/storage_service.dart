@@ -24,7 +24,7 @@ class StorageService {
   }
 
   String getSelectedCar() {
-    return _prefs.getString(keySelectedCar) ?? 'assets/cars/orange_car.png';
+    return _prefs.getString(keySelectedCar) ?? 'assets/cars/Camaro.png';
   }
 
   String getSelectedBackground() {

@@ -22,7 +22,7 @@ class _MenuScreenState extends State<MenuScreen> {
   final TextEditingController _controller = TextEditingController();
 
   late final SupabaseService _supabaseService;
-  String _selectedCarAsset = 'assets/cars/orange_car.png';
+  String _selectedCarAsset = 'assets/cars/Camaro.png';
   String _selectedBackgroundAsset = 'assets/backgrounds/forest_bg.png';
   final AudioManager _audioManager = AudioManager.instance;
 
