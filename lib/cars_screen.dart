@@ -27,22 +27,22 @@ class _CarsScreenState extends State<CarsScreen> {
 
   final List<CarOption> _carOptions = [
     CarOption(
-      name: 'MODEL-01 ORANGE',
+      name: 'Chevrolet Camaro Bumblebee',
       assetPath: 'assets/cars/Camaro.png',
       previewPath: 'assets/cars/Camaro.gif',
     ),
     CarOption(
-      name: 'MODEL-02 BLUE',
+      name: 'Honda Civic Type R',
       assetPath: 'assets/cars/TypeR.png',
       previewPath: 'assets/cars/TypeR.gif',
     ),
     CarOption(
-      name: 'MODEL-03 HYBRID',
+      name: 'Nissan GTR nismo',
       assetPath: 'assets/cars/GTR.png',
       previewPath: 'assets/cars/GTR.gif',
     ),
     CarOption(
-      name: 'MODEL-04 TURBO',
+      name: 'Mazda Miata R',
       assetPath: 'assets/cars/Miata.png',
       previewPath: 'assets/cars/Miata.gif',
     ),
@@ -157,8 +157,8 @@ class _CarsScreenState extends State<CarsScreen> {
           children: [
             // Preview del coche
             Container(
-              width: 80,
-              height: 60,
+              width: 150,
+              height: 120,
               decoration: BoxDecoration(
                 color: Colors.black,
                 border: Border.all(color: Colors.white24),
