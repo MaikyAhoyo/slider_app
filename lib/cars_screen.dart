@@ -5,7 +5,13 @@ import 'services/storage_service.dart';
 class CarOption {
   final String name;
   final String assetPath;
-  CarOption({required this.name, required this.assetPath});
+  final String previewPath;
+
+  CarOption({
+    required this.name,
+    required this.assetPath,
+    String? previewPath,
+  }) : previewPath = previewPath ?? assetPath;
 }
 
 class CarsScreen extends StatefulWidget {
@@ -20,15 +26,25 @@ class _CarsScreenState extends State<CarsScreen> {
   late String _selectedCarAsset;
 
   final List<CarOption> _carOptions = [
-    CarOption(name: 'MODEL-01 ORANGE', assetPath: 'assets/cars/Camaro.png'),
-    CarOption(name: 'MODEL-02 BLUE', assetPath: 'assets/cars/TypeR.png'),
+    CarOption(
+      name: 'MODEL-01 ORANGE',
+      assetPath: 'assets/cars/Camaro.png',
+      previewPath: 'assets/cars/Camaro.gif',
+    ),
+    CarOption(
+      name: 'MODEL-02 BLUE',
+      assetPath: 'assets/cars/TypeR.png',
+      previewPath: 'assets/cars/TypeR.gif',
+    ),
     CarOption(
       name: 'MODEL-03 HYBRID',
       assetPath: 'assets/cars/GTR.png',
+      previewPath: 'assets/cars/GTR.gif',
     ),
     CarOption(
       name: 'MODEL-04 TURBO',
       assetPath: 'assets/cars/Miata.png',
+      previewPath: 'assets/cars/Miata.gif',
     ),
   ];
 
@@ -148,7 +164,7 @@ class _CarsScreenState extends State<CarsScreen> {
                 border: Border.all(color: Colors.white24),
               ),
               padding: const EdgeInsets.all(5),
-              child: Image.asset(car.assetPath, fit: BoxFit.contain),
+              child: Image.asset(car.previewPath, fit: BoxFit.contain),
             ),
             const SizedBox(width: 15),
             // Info
