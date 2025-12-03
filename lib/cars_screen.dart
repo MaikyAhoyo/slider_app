@@ -20,15 +20,15 @@ class _CarsScreenState extends State<CarsScreen> {
   late String _selectedCarAsset;
 
   final List<CarOption> _carOptions = [
-    CarOption(name: 'MODEL-01 ORANGE', assetPath: 'assets/cars/orange_car.png'),
-    CarOption(name: 'MODEL-02 BLUE', assetPath: 'assets/cars/blue_car.png'),
+    CarOption(name: 'MODEL-01 ORANGE', assetPath: 'assets/cars/Camaro.png'),
+    CarOption(name: 'MODEL-02 BLUE', assetPath: 'assets/cars/TypeR.png'),
     CarOption(
       name: 'MODEL-03 HYBRID',
-      assetPath: 'assets/cars/purple_green_car.png',
+      assetPath: 'assets/cars/GTR.png',
     ),
     CarOption(
       name: 'MODEL-04 TURBO',
-      assetPath: 'assets/cars/red_lightning_car.png',
+      assetPath: 'assets/cars/Miata.png',
     ),
   ];
 
