@@ -4,11 +4,13 @@ import 'services/storage_service.dart';
 
 class CarOption {
   final String name;
+  final String description;
   final String assetPath;
   final String previewPath;
 
   CarOption({
     required this.name,
+    required this.description,
     required this.assetPath,
     String? previewPath,
   }) : previewPath = previewPath ?? assetPath;
@@ -27,22 +29,30 @@ class _CarsScreenState extends State<CarsScreen> {
 
   final List<CarOption> _carOptions = [
     CarOption(
-      name: 'Chevrolet Camaro Bumblebee',
+      name: 'Chevrolet Camaro',
+      description:
+          'El Camaro es un automóvil de alto rendimiento que combina estilo y potencia.',
       assetPath: 'assets/cars/Camaro.png',
       previewPath: 'assets/cars/Camaro.gif',
     ),
     CarOption(
       name: 'Honda Civic Type R',
+      description:
+          'El Civic Type R es un automóvil de alto rendimiento que combina estilo y potencia.',
       assetPath: 'assets/cars/TypeR.png',
       previewPath: 'assets/cars/TypeR.gif',
     ),
     CarOption(
-      name: 'Nissan GTR nismo',
+      name: 'Nissan GTR Nismo',
+      description:
+          'El GTR Nismo es un automóvil de alto rendimiento que combina estilo y potencia.',
       assetPath: 'assets/cars/GTR.png',
       previewPath: 'assets/cars/GTR.gif',
     ),
     CarOption(
-      name: 'Mazda Miata R',
+      name: 'Mazda Miata',
+      description:
+          'El Miata es un automóvil de alto rendimiento que combina estilo y potencia.',
       assetPath: 'assets/cars/Miata.png',
       previewPath: 'assets/cars/Miata.gif',
     ),
@@ -52,12 +62,22 @@ class _CarsScreenState extends State<CarsScreen> {
   void initState() {
     super.initState();
     _selectedCarAsset = widget.currentCarAsset;
+
+    final bool exists = _carOptions.any(
+      (car) => car.assetPath == _selectedCarAsset,
+    );
+
+    if (!exists && _carOptions.isNotEmpty) {
+      _selectedCarAsset = _carOptions.first.assetPath;
+      StorageService().saveSelectedCar(_selectedCarAsset);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final orientation = MediaQuery.of(context).orientation;
     final isLandscape = orientation == Orientation.landscape;
+
     final bgImage = isLandscape
         ? "assets/backgrounds/menu_h_bg.png"
         : "assets/backgrounds/menu_bg.png";
@@ -66,7 +86,6 @@ class _CarsScreenState extends State<CarsScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Fondo
           Positioned.fill(
             child: Opacity(
               opacity: 0.4,
@@ -75,45 +94,78 @@ class _CarsScreenState extends State<CarsScreen> {
           ),
 
           SafeArea(
-            child: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 800),
-                padding: const EdgeInsets.all(16),
-                child: RetroWindow(
-                  title: 'GARAJE',
-                  icon: Icons.directions_car,
-                  onClose: () => Navigator.of(context).pop(_selectedCarAsset),
-                  child: Column(
+            child: Column(
+              children: [
+                RetroBox(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      RetroBox(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              color: Colors.greenAccent,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.directions_car,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'GARAJE',
+                            style: getRetroStyle(
+                              size: 20,
+                              color: Colors.yellowAccent,
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              "SELECCIONAR UNIDAD",
-                              style: getRetroStyle(size: 14),
-                            ),
-                          ],
+                          ),
+                        ],
+                      ),
+
+                      GestureDetector(
+                        onTap: () =>
+                            Navigator.of(context).pop(_selectedCarAsset),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white),
+                            color: Colors.red.shade900,
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          child: Text("X", style: getRetroStyle(size: 16)),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
 
-                      // LISTA GRID
-                      Expanded(
-                        child: RetroBox(
-                          padding: const EdgeInsets.all(8),
-                          child: GridView.builder(
+                const SizedBox(height: 5),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: RetroBox(
+                      padding: const EdgeInsets.all(8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          int gridColumns = isLandscape ? 3 : 2;
+
+                          return GridView.builder(
+                            padding: EdgeInsets.zero,
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: isLandscape ? 2 : 1,
-                                  childAspectRatio: 2.8,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
+                                  crossAxisCount: gridColumns,
+                                  childAspectRatio: 0.65,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
                                 ),
                             itemCount: _carOptions.length,
                             itemBuilder: (context, index) {
@@ -122,13 +174,15 @@ class _CarsScreenState extends State<CarsScreen> {
                                   car.assetPath == _selectedCarAsset;
                               return _buildRetroCarSlot(car, isSelected);
                             },
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 5),
+              ],
             ),
           ),
         ],
@@ -137,65 +191,96 @@ class _CarsScreenState extends State<CarsScreen> {
   }
 
   Widget _buildRetroCarSlot(CarOption car, bool isSelected) {
-    return GestureDetector(
-      onTap: () async {
-        setState(() {
-          _selectedCarAsset = car.assetPath;
-        });
-        await StorageService().saveSelectedCar(car.assetPath);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.green.withOpacity(0.3) : Colors.black54,
-          border: Border.all(
-            color: isSelected ? Colors.greenAccent : Colors.grey,
-            width: isSelected ? 3 : 1,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.8),
+        border: Border.all(
+          color: isSelected ? Colors.greenAccent : Colors.white24,
+          width: isSelected ? 2 : 1,
         ),
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            // Preview del coche
-            Container(
-              width: 150,
-              height: 120,
+        boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Container(
+              margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.black,
-                border: Border.all(color: Colors.white24),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.grey.shade900, Colors.black],
+                ),
+                border: Border.all(color: Colors.white10),
               ),
-              padding: const EdgeInsets.all(5),
+              padding: const EdgeInsets.all(8),
               child: Image.asset(car.previewPath, fit: BoxFit.contain),
             ),
-            const SizedBox(width: 15),
-            // Info
-            Expanded(
+          ),
+
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     car.name,
-                    style: getRetroStyle(
-                      color: isSelected ? Colors.greenAccent : Colors.white,
-                      size: 16,
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: getRetroStyle(size: 14, color: Colors.white),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   Text(
-                    isSelected ? "EQUIPADO" : "DISPONIBLE",
-                    style: TextStyle(
+                    car.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       fontFamily: 'Courier',
-                      fontSize: 10,
-                      color: isSelected ? Colors.white : Colors.grey,
+                      fontSize: 12,
+                      color: Colors.grey,
                     ),
                   ),
                 ],
               ),
             ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: Colors.greenAccent),
-          ],
-        ),
+          ),
+
+          GestureDetector(
+            onTap: () async {
+              setState(() {
+                _selectedCarAsset = car.assetPath;
+              });
+              await StorageService().saveSelectedCar(car.assetPath);
+            },
+            child: Container(
+              height: 40,
+              margin: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF00AA00)
+                    : const Color(0xFF0000AA),
+                border: Border.all(color: Colors.white54),
+              ),
+              child: Center(
+                child: Text(
+                  isSelected ? "EQUIPADO" : "SELECCIONAR",
+                  style: const TextStyle(
+                    fontFamily: 'Courier',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
