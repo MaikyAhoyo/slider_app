@@ -109,6 +109,7 @@ Esta aplicación utiliza variables de entorno para gestionar configuraciones sen
 
 ## 🪪 Créditos y Assets
 
-* **Música:** Generada con IA (Suno/Udio) utilizando prompts específicos para lograr estilos "Jungle DnB", "N64 Water Level" y "Sci-Fi Techno".
+* **Música:** Generada con IA (Suno/Udio) utilizando prompts específicos para lograr los estilos deseados.
+* **Efectos de sonido:** Obtenidos de la libreria de sonidos gratis "Freesound".
 * **Gráficos:** Sprites de coches y tilesets generados y editados para mantener la estética Pixel Art / Low Poly.
 * **Iconos:** [freepngimg](https://freepngimg.com/png/148675-car-top-vector-view-free-hd-image) y Material Icons.
