@@ -34,20 +34,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: kRetroBlueTop,
-        title: Text("CONFIGURACIÓN", style: getRetroStyle()),
-        centerTitle: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(color: Colors.white, height: 2),
-        ),
-      ),
       body: Stack(
         children: [
           Positioned.fill(
@@ -57,56 +43,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: RetroBox(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "AUDIO SYSTEM",
-                        style: getRetroStyle(color: Colors.yellow, size: 18),
-                      ),
-                      const Divider(
-                        color: Colors.white24,
-                        thickness: 1,
-                        height: 30,
-                      ),
+          SafeArea(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 600),
+                padding: const EdgeInsets.all(16),
+                child: RetroWindow(
+                  title: 'AJUSTES',
+                  icon: Icons.settings,
+                  onClose: () => Navigator.of(context).pop(),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RetroBox(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.equalizer,
+                                    color: Colors.greenAccent,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    "AUDIO SYSTEM",
+                                    style: getRetroStyle(size: 16),
+                                  ),
+                                ],
+                              ),
+                              const Divider(
+                                color: Colors.white24,
+                                thickness: 1,
+                                height: 20,
+                              ),
+                              const SizedBox(height: 10),
 
-                      _buildRetroSlider(
-                        label: "MASTER",
-                        value: _masterVolume,
-                        onChanged: (val) {
-                          setState(() => _masterVolume = val);
-                          _audioManager.setMasterVolume(val);
-                        },
-                      ),
+                              _buildRetroSlider(
+                                label: "MASTER",
+                                value: _masterVolume,
+                                onChanged: (val) {
+                                  setState(() => _masterVolume = val);
+                                  _audioManager.setMasterVolume(val);
+                                },
+                              ),
 
-                      const SizedBox(height: 20),
+                              const SizedBox(height: 20),
 
-                      _buildRetroSlider(
-                        label: "MUSIC",
-                        value: _musicVolume,
-                        onChanged: (val) {
-                          setState(() => _musicVolume = val);
-                          _audioManager.setMusicVolume(val);
-                        },
-                      ),
+                              _buildRetroSlider(
+                                label: "MUSICA",
+                                value: _musicVolume,
+                                onChanged: (val) {
+                                  setState(() => _musicVolume = val);
+                                  _audioManager.setMusicVolume(val);
+                                },
+                              ),
 
-                      const SizedBox(height: 20),
+                              const SizedBox(height: 20),
 
-                      _buildRetroSlider(
-                        label: "SFX",
-                        value: _sfxVolume,
-                        onChanged: (val) {
-                          setState(() => _sfxVolume = val);
-                          _audioManager.setSfxVolume(val);
-                        },
-                      ),
-                    ],
+                              _buildRetroSlider(
+                                label: "SFX",
+                                value: _sfxVolume,
+                                onChanged: (val) {
+                                  setState(() => _sfxVolume = val);
+                                  _audioManager.setSfxVolume(val);
+                                },
+                              ),
+
+                              const SizedBox(height: 10),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -128,26 +139,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: getRetroStyle()),
+            Text(label, style: getRetroStyle(size: 14)),
             Text(
               "${(value * 100).toInt()}%",
-              style: getRetroStyle(color: Colors.greenAccent),
+              style: getRetroStyle(color: Colors.greenAccent, size: 14),
             ),
           ],
         ),
         const SizedBox(height: 5),
         SizedBox(
-          height: 30, // Altura del slider
+          height: 35,
           child: SliderTheme(
             data: SliderThemeData(
-              trackHeight: 10,
+              trackHeight: 12,
               activeTrackColor: Colors.green,
               inactiveTrackColor: Colors.black,
               thumbColor: Colors.white,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
               overlayShape: SliderComponentShape.noOverlay,
-              trackShape:
-                  const RectangularSliderTrackShape(), // Forma rectangular dura
+              trackShape: const RectangularSliderTrackShape(),
             ),
             child: Slider(value: value, onChanged: onChanged),
           ),
