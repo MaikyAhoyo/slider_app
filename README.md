@@ -14,7 +14,7 @@ El juego cuenta con un sistema de **Backgrounds Seamless** (scroll infinito) que
 - **👻 Haunted Forest:** Un bosque tenebroso con niebla y vibras de Halloween.
 - **❄️ North Pole:** Pista helada con estética invernal.
 - **🌊 Deep Ocean:** Una carrera submarina rodeada de coral.
-- **🪐 Mars:** Carreras espaciales en el planeta rojo.
+- **🪐 Desert:** Un desierto desolado y antiguo.
 - **🏙️ Futuristic:** Una ciudad cyberpunk llena de luces de neón.
 
 ### 🚗 Garaje y Vehículos
