@@ -33,51 +33,61 @@ class _BackgroundStylesState extends State<BackgroundStyles> {
       assetPath: 'assets/backgrounds/forest_bg.png',
     ),
     BackgroundOption(
-      name: 'NORTH POLE',
-      description: 'Pista helada y resbaladiza. ¡Cuidado con los derrapes!',
-      assetPath: 'assets/backgrounds/snow_bg.png',
-    ),
-    BackgroundOption(
       name: 'HAUNTED FOREST',
       description:
           'Un lugar tenebroso donde los fantasmas observan tu carrera.',
-      assetPath: 'assets/backgrounds/haunted_forest_bg.png',
+      assetPath: 'assets/backgrounds/haunted_bg.png',
     ),
     BackgroundOption(
-      name: 'MARS COLONY',
-      description: 'Compite en el planeta rojo con baja gravedad y polvo rojo.',
-      assetPath: 'assets/backgrounds/mars_bg.png',
+      name: 'NORTH POLE',
+      description: 'Pista helada y resbaladiza. ¡Cuidado con los derrapes!',
+      assetPath: 'assets/backgrounds/snow_bg.png',
     ),
     BackgroundOption(
       name: 'DEEP OCEAN',
       description: 'Una pista submarina rodeada de vida marina y burbujas.',
       assetPath: 'assets/backgrounds/underwater_bg.png',
     ),
+    BackgroundOption(
+      name: 'DESERT',
+      description:
+          'Pista desertica con arena y rocas, ¡Cuidado con deshidratarte!',
+      assetPath: 'assets/backgrounds/desert_bg.png',
+    ),
+    BackgroundOption(
+      name: 'FUTURISTIC',
+      description: 'Pista futurista con luces y techos.',
+      assetPath: 'assets/backgrounds/futuristic_bg.png',
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _loadSelectedBackground();
   }
 
-  Future<void> _loadInitialData() async {
-    _selectedBackground = widget.currentBackground;
+  void _loadSelectedBackground() {
+    String storedBackground = StorageService().getSelectedBackground();
 
     final bool exists = _backgroundOptions.any(
-      (bg) => bg.assetPath == _selectedBackground,
+      (bg) => bg.assetPath == storedBackground,
     );
 
-    if (!exists && _backgroundOptions.isNotEmpty) {
-      _selectedBackground = _backgroundOptions.first.assetPath;
-      await StorageService().saveSelectedBackground(_selectedBackground);
+    if (exists) {
+      _selectedBackground = storedBackground;
+    } else {
+      if (_backgroundOptions.isNotEmpty) {
+        _selectedBackground = _backgroundOptions.first.assetPath;
+        StorageService().saveSelectedBackground(_selectedBackground);
+      } else {
+        _selectedBackground = ''; // Fallback safe
+      }
     }
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override

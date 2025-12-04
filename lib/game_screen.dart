@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'services/supabase_service.dart';
 import 'services/audio_manager.dart';
+import 'services/storage_service.dart';
 import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
@@ -35,6 +36,9 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _gameLoopController;
   final Random _random = Random();
 
+  // Variable para controlar el fondo real (cargado de memoria)
+  late String _currentBackgroundPath;
+
   // Lista de objetos en la carretera
   final List<GameObject> _gameObjects = [];
 
@@ -61,6 +65,12 @@ class _GameScreenState extends State<GameScreen>
   @override
   void initState() {
     super.initState();
+
+    final savedBg = StorageService().getSelectedBackground();
+    _currentBackgroundPath = savedBg.isNotEmpty
+        ? savedBg
+        : widget.backgroundAssetPath;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final size = MediaQuery.of(context).size;
       screenWidth = size.width;
@@ -77,6 +87,16 @@ class _GameScreenState extends State<GameScreen>
     _gameLoopController.addListener(_onGameLoopTick);
     _gameLoopController.repeat();
     _playMusic();
+  }
+
+  // Transforma los archivos de fondo para que sean responsivos
+  String _getResponsiveBackground(bool isLandscape) {
+    if (!isLandscape) return _currentBackgroundPath;
+
+    if (_currentBackgroundPath.endsWith('_bg.png')) {
+      return _currentBackgroundPath.replaceAll('_bg.png', '_h_bg.png');
+    }
+    return _currentBackgroundPath;
   }
 
   /// Genera objetos aleatoriamente en la carretera
@@ -100,14 +120,11 @@ class _GameScreenState extends State<GameScreen>
 
       double startY;
       if (isLandscape) {
-        // En landscape, empiezan a la derecha (screenWidth)
         startY = screenWidth + 100;
       } else {
-        // En portrait, empiezan arriba (-100)
         startY = -100;
       }
 
-      // --- LÓGICA DE NO SOBREPOSICIÓN ---
       for (int attempt = 0; attempt < 15; attempt++) {
         final double randomX = minX + _random.nextDouble() * (maxX - minX);
 
@@ -236,36 +253,38 @@ class _GameScreenState extends State<GameScreen>
           carBottom > objTop) {
         if (obj.asset == 'assets/objects/gas.png') {
           _fuel = (_fuel + 30).clamp(0, 100);
-          _playSound('gas_fx');
+          _playSound('gas_sfx');
         } else if (obj.asset == 'assets/objects/coin.png') {
           _coins += 100;
-          _playSound('coin_fx');
+          _playSound('coin_sfx');
         } else if (obj.asset == 'assets/objects/tire.png') {
           _tires += 1;
-          _playSound('tire_fx');
+          _playSound('tire_sfx');
         } else if (obj.asset == 'assets/objects/rock.png' ||
             obj.asset == 'assets/objects/rock_large.png') {
           _tires -= 1;
-          _playSound('crash_fx');
+          _playSound('crash_sfx');
         }
         _gameObjects.removeAt(i);
       }
     }
   }
 
-  /// Reproduce música dependiendo del fondo
+  /// Reproduce música dependiendo del fondo (Ahora usa _currentBackgroundPath)
   Future<void> _playMusic() async {
-    String theme = 'game_theme';
-    if (widget.backgroundAssetPath.contains('forest')) {
-      theme = 'theme_forest';
-    } else if (widget.backgroundAssetPath.contains('snow')) {
-      theme = 'theme_snow';
-    } else if (widget.backgroundAssetPath.contains('haunted')) {
-      theme = 'theme_haunted';
-    } else if (widget.backgroundAssetPath.contains('mars')) {
-      theme = 'theme_mars';
-    } else if (widget.backgroundAssetPath.contains('underwater')) {
-      theme = 'theme_underwater';
+    String theme = 'menu_theme';
+    if (_currentBackgroundPath.contains('forest')) {
+      theme = 'forest_theme';
+    } else if (_currentBackgroundPath.contains('snow')) {
+      theme = 'snow_theme';
+    } else if (_currentBackgroundPath.contains('haunted')) {
+      theme = 'haunted_theme';
+    } else if (_currentBackgroundPath.contains('desert')) {
+      theme = 'desert_theme';
+    } else if (_currentBackgroundPath.contains('underwater')) {
+      theme = 'underwater_theme';
+    } else if (_currentBackgroundPath.contains('futuristic')) {
+      theme = 'futuristic_theme';
     }
     await _audioManager.playMusic(theme);
   }
@@ -282,9 +301,6 @@ class _GameScreenState extends State<GameScreen>
 
   /// Actualiza la dificultad del juego
   void _updateDifficulty() {
-    // Velocidad base: 5.0
-    // Aumenta 0.5 de velocidad por cada 300 monedas recolectadas
-    // Tope máximo de velocidad: 15.0
     double newSpeed = 5.0 + (_coins / 300) * 0.5;
     _gameSpeed = newSpeed.clamp(7.0, 15.0);
   }
@@ -294,11 +310,7 @@ class _GameScreenState extends State<GameScreen>
     if (_isGameOver) return;
     setState(() {
       _fuel -= 0.05;
-
-      // Actualizar dificultad
       _updateDifficulty();
-
-      // Actualizar scroll del fondo
       _backgroundScrollOffset += _gameSpeed;
       final orientation = MediaQuery.of(context).orientation;
       final bool isLandscape = orientation == Orientation.landscape;
@@ -354,6 +366,7 @@ class _GameScreenState extends State<GameScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        _playSound('game_over_sfx');
         return GameOverMenu(
           reason: reason,
           score: _coins,
@@ -401,34 +414,31 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  /// Construye la pantalla en modo vertical
   Widget _buildPortraitLayout() {
+    final String bgPath = _getResponsiveBackground(false);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Fondo dinámico con scroll infinito (Horizontal hacia abajo)
         Positioned(
           top: _backgroundScrollOffset,
           left: 0,
           right: 0,
           height: screenHeight,
-          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+          child: Image.asset(bgPath, fit: BoxFit.cover),
         ),
-        // Imagen 2 (inmediatamente después)
         Positioned(
           top: _backgroundScrollOffset - screenHeight,
           left: 0,
           right: 0,
           height: screenHeight,
-          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+          child: Image.asset(bgPath, fit: BoxFit.cover),
         ),
-
-        // Carretera transparente
         Align(
           alignment: Alignment.center,
           child: Container(width: roadWidth, color: Colors.transparent),
         ),
-
-        // Objetos
         ..._gameObjects.map((obj) {
           final double posX = (screenWidth / 2) + obj.x;
           return Positioned(
@@ -442,8 +452,6 @@ class _GameScreenState extends State<GameScreen>
             ),
           );
         }).toList(),
-
-        // Carro
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
@@ -458,11 +466,7 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
-
-        // UI
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
-
-        // Menus
         if (_isPaused && !_isSettings)
           PauseMenu(
             onResume: _resumeGame,
@@ -486,34 +490,31 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  /// Construye la pantalla en modo paisaje
   Widget _buildLandscapeLayout() {
+    final String bgPath = _getResponsiveBackground(true);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Fondo dinámico con scroll infinito (Horizontal hacia la izquierda)
         Positioned(
           left: -_backgroundScrollOffset,
           top: 0,
           bottom: 0,
           width: screenWidth,
-          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+          child: Image.asset(bgPath, fit: BoxFit.cover),
         ),
-        // Imagen 2 (inmediatamente después)
         Positioned(
           left: -_backgroundScrollOffset + screenWidth,
           top: 0,
           bottom: 0,
           width: screenWidth,
-          child: Image.asset(widget.backgroundAssetPath, fit: BoxFit.cover),
+          child: Image.asset(bgPath, fit: BoxFit.cover),
         ),
-
-        // Carretera transparente
         Align(
           alignment: Alignment.center,
           child: Container(height: roadWidth, color: Colors.transparent),
         ),
-
-        // Objetos
         ..._gameObjects.map((obj) {
           final double posY = (screenHeight / 2) + obj.x;
           return Positioned(
@@ -527,8 +528,6 @@ class _GameScreenState extends State<GameScreen>
             ),
           );
         }).toList(),
-
-        // Carro
         Align(
           alignment: Alignment.centerLeft,
           child: Padding(
@@ -546,11 +545,7 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
-
-        // UI
         Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
-
-        // Menus
         if (_isPaused && !_isSettings)
           Center(
             child: PauseMenu(
@@ -595,7 +590,6 @@ class _GameScreenState extends State<GameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // --- BOTÓN PAUSA ---
           GestureDetector(
             onTap: () {
               setState(() {
@@ -612,11 +606,9 @@ class _GameScreenState extends State<GameScreen>
               child: const Icon(Icons.pause, color: Colors.white, size: 24),
             ),
           ),
-
-          // --- MONEDAS ---
           Row(
             children: [
-              Text(
+              const Text(
                 '\$',
                 style: TextStyle(
                   color: Colors.yellow,
@@ -638,8 +630,6 @@ class _GameScreenState extends State<GameScreen>
               ),
             ],
           ),
-
-          // --- LLANTAS ---
           Row(
             children: [
               const Icon(
@@ -660,8 +650,6 @@ class _GameScreenState extends State<GameScreen>
               ),
             ],
           ),
-
-          // --- GASOLINA ---
           Row(
             children: [
               const Icon(

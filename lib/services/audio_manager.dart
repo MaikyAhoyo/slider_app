@@ -15,24 +15,23 @@ class AudioManager {
 
   final Map<String, String> _soundMap = {
     'menu_theme': 'music/menu_theme.mp3',
-    'game_theme': 'music/game_theme.mp3',
-    'theme_forest': 'music/forest_theme.mp3',
-    'theme_snow': 'music/snow_theme.mp3',
-    'theme_haunted': 'music/haunted_theme.mp3',
-    'theme_mars': 'music/mars_theme.mp3',
-    'theme_underwater': 'music/underwater_theme.mp3',
-    'game_over': 'sfx/game_over_sfx.mp3',
-    'gas_fx': 'sfx/gas_sfx.mp3',
-    'coin_fx': 'sfx/coin_sfx.mp3',
-    'tire_fx': 'sfx/tire_sfx.mp3',
-    'crash_fx': 'sfx/crash_sfx.mp3',
+    'forest_theme': 'music/forest_theme.mp3',
+    'haunted_theme': 'music/haunted_theme.mp3',
+    'snow_theme': 'music/snow_theme.mp3',
+    'desert_theme': 'music/desert_theme.mp3',
+    'futuristic_theme': 'music/futuristic_theme.mp3',
+    'underwater_theme': 'music/underwater_theme.mp3',
+    'game_over_sfx': 'sfx/game_over_sfx.wav',
+    'gas_sfx': 'sfx/gas_sfx.wav',
+    'coin_sfx': 'sfx/coin_sfx.wav',
+    'tire_sfx': 'sfx/tire_sfx.wav',
+    'crash_sfx': 'sfx/crash_sfx.wav',
   };
 
   AudioManager._internal() {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
   }
 
-  /// Carga los ajustes del almacenamiento
   Future<void> loadSettings() async {
     final storage = StorageService();
     _masterVolume = storage.getMasterVolume();
@@ -110,9 +109,6 @@ class AudioManager {
     }
 
     try {
-      if (_sfxPlayer.state == PlayerState.playing) {
-        await _sfxPlayer.stop();
-      }
       await _sfxPlayer.setSource(AssetSource(path));
       await _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
       await _sfxPlayer.resume();
