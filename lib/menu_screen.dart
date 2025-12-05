@@ -40,6 +40,7 @@ class _MenuScreenState extends State<MenuScreen> {
     setState(() {
       playerName = _storage.getPlayerName();
       _selectedCarAsset = _storage.getSelectedCar();
+      _selectedBackgroundAsset = _storage.getSelectedBackground();
       _controller.text = playerName;
     });
   }
@@ -333,7 +334,11 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                 );
               }
-              _playMenuMusic();
+              await Future.delayed(const Duration(milliseconds: 1000));
+
+              if (mounted) {
+                _playMenuMusic();
+              }
             },
           ),
 

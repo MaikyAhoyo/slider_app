@@ -1,30 +1,76 @@
-# slider_app
+# 🏎️ Poly Racer
 
-A Flutter application with Supabase integration for player score tracking.
+**Poly Racer** es un juego de carreras estilo *Endless Runner* desarrollado en **Flutter**, inspirado en la nostalgia y la estética **Low-Poly de la era de PlayStation 1**.
+
+El objetivo es simple pero desafiante: conduce tan lejos como puedas, esquiva obstáculos, recoge monedas y gestiona tus recursos (gasolina y neumáticos) antes de que se agoten. ¡Todo esto mientras disfrutas de una banda sonora dinámica generada por IA que se adapta a cada escenario!
+
+---
+
+## 🎮 Características Principales
+
+### 🌍 Escenarios Temáticos (Mundos)
+El juego cuenta con un sistema de **Backgrounds Seamless** (scroll infinito) que cambia la atmósfera y la música del juego.
+- **🌲 Forest:** Un bosque clásico y soleado estilo arcade.
+- **👻 Haunted Forest:** Un bosque tenebroso con niebla y vibras de Halloween.
+- **❄️ North Pole:** Pista helada con estética invernal.
+- **🌊 Deep Ocean:** Una carrera submarina rodeada de coral.
+- **🪐 Desert:** Un desierto desolado y antiguo.
+- **🏙️ Futuristic:** Una ciudad cyberpunk llena de luces de neón.
+
+### 🚗 Garaje y Vehículos
+Selecciona tu vehículo favorito en el garaje. Cada coche tiene su propio estilo visual pixel-art:
+- **Chevrolet Camaro:** Potencia clásica americana.
+- **Honda Civic Type R:** Agilidad japonesa.
+- **Nissan GTR Nismo:** Velocidad pura.
+- **Mazda Miata:** Ligero y divertido.
+
+### 🛠️ Mecánicas de Juego
+- **Sistema de Recursos:**
+  - ⛽ **Gasolina:** Se consume con el tiempo. ¡Recoge bidones para no quedarte tirado!
+  - 🛞 **Llantas:** Representan tu "vida". Chocar con rocas grandes o pequeñas daña tus neumáticos. Recoge kits de reparación.
+- **Economía:** Recoge **Monedas ($)** para aumentar tu puntuación.
+- **Dificultad Dinámica:** La velocidad del juego aumenta progresivamente a medida que recoges más monedas.
+- **Responsividad Total:** Juega en modo **Vertical (Portrait)** con una mano o **Horizontal (Landscape)** para una vista panorámica. El juego adapta la interfaz y los controles automáticamente.
+
+### 💾 Persistencia y Backend
+- **Shared Preferences:** Guarda tu nombre de piloto, tu coche favorito, el último escenario seleccionado y tus ajustes de volumen localmente.
+- **Supabase:** Integración para autenticación y (opcionalmente) guardado de puntuaciones en la nube.
+
+---
+
+## 👥 Autores
+
+Este proyecto fue desarrollado por:
+
+* **ARROYO LOPEZ MIGUEL ANGEL**
+* **BORCHARDT CASTELLANOS GAEL HUMBERTO**
+* **PEREZ IBARRA ANGEL FRANCISCO**
+
+---
 
 ## 🔧 Configuración de Variables de Entorno
 
-Esta aplicación utiliza variables de entorno para gestionar configuraciones sensibles.
+Esta aplicación utiliza variables de entorno para gestionar configuraciones sensibles como la conexión a la base de datos.
 
 ### Configuración Inicial
 
-1. Copia el archivo de ejemplo `.env.example` a `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+1.  Copia el archivo de ejemplo `.env.example` a `.env`:
+    ```bash
+    cp .env.example .env
+    ```
 
-2. Edita el archivo `.env` con tus credenciales reales:
-   ```env
-   # Supabase Configuration
-   SUPABASE_URL=https://tu-proyecto.supabase.co
-   SUPABASE_ANON_KEY=tu_anon_key_aqui
-   
-   # Authentication
-   AUTH_EMAIL=tu_email@example.com
-   AUTH_PASSWORD=tu_password_aqui
-   ```
+2.  Edita el archivo `.env` con tus credenciales reales:
+    ```env
+    # Supabase Configuration
+    SUPABASE_URL=[https://tu-proyecto.supabase.co](https://tu-proyecto.supabase.co)
+    SUPABASE_ANON_KEY=tu_anon_key_aqui
 
-3. El archivo `.env` está en `.gitignore` y **NO debe** ser commiteado.
+    # Authentication
+    AUTH_EMAIL=tu_email@example.com
+    AUTH_PASSWORD=tu_password_aqui
+    ```
+
+3.  **Nota:** El archivo `.env` está en `.gitignore` y **NO debe** ser subido al repositorio.
 
 ### Variables Disponibles
 
@@ -32,71 +78,38 @@ Esta aplicación utiliza variables de entorno para gestionar configuraciones sen
 |----------|-------------|
 | `SUPABASE_URL` | URL de tu proyecto Supabase |
 | `SUPABASE_ANON_KEY` | Clave anónima pública de Supabase |
-| `AUTH_EMAIL` | Email para autenticación |
-| `AUTH_PASSWORD` | Contraseña para autenticación |
+| `AUTH_EMAIL` | Email para autenticación por defecto |
+| `AUTH_PASSWORD` | Contraseña para autenticación por defecto |
+
+---
 
 ## 🚀 Instalación y Ejecución
 
-1. Instala las dependencias:
-   ```bash
-   flutter pub get
-   ```
+1.  Asegúrate de tener Flutter instalado (SDK ^3.9.2).
+2.  Instala las dependencias:
+    ```bash
+    flutter pub get
+    ```
+3.  Configura tu archivo `.env` (ver sección anterior).
+4.  Ejecuta la aplicación:
+    ```bash
+    flutter run
+    ```
+---
 
-2. Configura tu archivo `.env` (ver arriba)
+## 📦 Dependencias Clave
 
-3. Ejecuta la aplicación:
-   ```bash
-   flutter run
-   ```
+* [`flutter`](https://flutter.dev): Framework UI.
+* [`supabase_flutter`](https://pub.dev/packages/supabase_flutter): Backend as a Service.
+* [`shared_preferences`](https://pub.dev/packages/shared_preferences): Guardado de datos local.
+* [`audioplayers`](https://pub.dev/packages/audioplayers): Reproducción de música y efectos de sonido.
+* [`flutter_dotenv`](https://pub.dev/packages/flutter_dotenv): Manejo de secretos.
 
-## 🏗️ Arquitectura
+---
 
-El proyecto sigue una arquitectura de servicios:
+## 🪪 Créditos y Assets
 
-```
-lib/
-├── main.dart                    # Punto de entrada, carga .env
-└── services/
-    └── supabase_service.dart   # Lógica de Supabase centralizada
-```
-
-### SupabaseService
-
-Todas las operaciones de Supabase están encapsuladas en `SupabaseService`:
-
-- `signIn()` - Autenticación
-- `insertPlayer()` - Insertar jugador
-- `updatePlayer()` - Actualizar puntos
-- `checkAndUpsertPlayer()` - Upsert inteligente
-- `retrievePoints()` - Obtener puntos
-
-## 🔒 Seguridad
-
-- **Nunca** compartas tu archivo `.env`
-- El archivo `.env` está en `.gitignore`
-- Usa `.env.example` como plantilla
-
-## 📦 Dependencias
-
-- `supabase_flutter: ^2.10.3` - Cliente de Supabase
-- `flutter_dotenv: ^5.1.0` - Gestión de variables de entorno
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-    
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## 🪪 Créditos
-
-- [Flutter](https://flutter.dev) - Framework para construir aplicaciones nativas
-- [Supabase](https://supabase.io) - Backend como servicio
-- [flutter_dotenv](https://pub.dev/packages/flutter_dotenv) - Gestión de variables de entorno
-- [freepngimg](https://freepngimg.com/png/148675-car-top-vector-view-free-hd-image) - Iconos de autos utilizados en la aplicación
+* **Música:** Generada con IA (Suno/Udio) utilizando prompts específicos para lograr los estilos deseados.
+* **Efectos de sonido:** Obtenidos de la libreria de sonidos gratis "Freesound".
+* **Gráficos:** Sprites de coches y tilesets generados y editados para mantener la estética Pixel Art / Low Poly.
+* **Iconos:** [freepngimg](https://freepngimg.com/png/148675-car-top-vector-view-free-hd-image) y Material Icons.
