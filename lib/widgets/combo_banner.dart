@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 class ComboBanner extends StatefulWidget {
   final String text;
@@ -27,32 +26,31 @@ class _ComboBannerState extends State<ComboBanner>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1500),
     );
 
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(
-          begin: 3.0,
-          end: 1.0,
-        ).chain(CurveTween(curve: Curves.elasticOut)),
-        weight: 40,
+          begin: 0.0,
+          end: 1.5,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
       ),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(_controller);
 
     _opacityAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 70),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(_controller);
 
-    final double randomAngle = (math.Random().nextBool() ? 1 : -1) * 0.15;
-    _rotationAnimation = Tween<double>(
-      begin: randomAngle,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+    _rotationAnimation = Tween<double>(begin: -0.1, end: 0.1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
 
     _controller.forward().then((_) => widget.onAnimationComplete());
   }
@@ -90,7 +88,6 @@ class _ComboBannerState extends State<ComboBanner>
                       ),
                     ),
                   ),
-
                   Transform.translate(
                     offset: const Offset(2, 2),
                     child: Text(
@@ -105,7 +102,6 @@ class _ComboBannerState extends State<ComboBanner>
                       ),
                     ),
                   ),
-
                   Text(
                     widget.text,
                     textAlign: TextAlign.center,
