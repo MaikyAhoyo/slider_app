@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../ui/retro_ui.dart';
+import 'leaderboard_menu.dart';
 
 class GameOverMenu extends StatelessWidget {
   final String reason;
   final int score;
   final VoidCallback onReturnToMenu;
   final VoidCallback onRestart;
+  final bool isHighScore;
+  final String playerName;
 
   const GameOverMenu({
     super.key,
@@ -13,110 +16,142 @@ class GameOverMenu extends StatelessWidget {
     required this.score,
     required this.onReturnToMenu,
     required this.onRestart,
+    required this.isHighScore,
+    required this.playerName,
   });
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
-    final menuWidth = isLandscape ? size.height * 0.7 : 320.0;
-
     return Material(
       type: MaterialType.transparency,
       child: Stack(
         children: [
-          // Fondo rojo semitransparente para dar sensación de peligro/muerte
-          Container(color: const Color(0xFF330000).withOpacity(0.8)),
+          Positioned.fill(
+            child: Container(color: const Color(0xFF330000).withOpacity(0.85)),
+          ),
 
-          Center(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: menuWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // TEXTO GAME OVER FLOTANDO FUERA DE LA CAJA
-                    Text(
-                      'GAME OVER',
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.red,
-                        letterSpacing: 5,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 0,
-                            color: Colors.black,
-                            offset: const Offset(4, 4),
-                          ),
-                        ],
-                      ),
-                    ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isLandscape =
+                        MediaQuery.of(context).orientation ==
+                        Orientation.landscape;
+                    final double menuWidth = isLandscape ? 500 : 320;
 
-                    const SizedBox(height: 20),
-
-                    // CAJA DE REPORTE DE MISIÓN
-                    RetroBox(
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: menuWidth),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            "ESTADO DE MISIÓN:",
-                            style: getRetroStyle(color: Colors.grey, size: 12),
+                            'GAME OVER',
+                            style: TextStyle(
+                              fontFamily: 'Courier',
+                              fontSize: isLandscape ? 36 : 42,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.red,
+                              letterSpacing: 5,
+                              shadows: const [
+                                Shadow(
+                                  blurRadius: 0,
+                                  color: Colors.black,
+                                  offset: Offset(4, 4),
+                                ),
+                              ],
+                            ),
                             textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-
-                          Text(
-                            reason.toUpperCase(),
-                            textAlign: TextAlign.center,
-                            style: getRetroStyle(size: 14, color: Colors.white),
                           ),
 
                           const SizedBox(height: 20),
-                          Container(
-                            color: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+
+                          RetroBox(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Text(
-                                  "SCORE FINAL",
+                                  "ESTADO DE MISIÓN:",
                                   style: getRetroStyle(
-                                    color: Colors.yellow,
+                                    color: Colors.grey,
                                     size: 12,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
+                                const SizedBox(height: 10),
+
                                 Text(
-                                  score.toString().padLeft(
-                                    6,
-                                    '0',
-                                  ), // Estilo arcade 000123
-                                  style: const TextStyle(
-                                    fontFamily: 'Courier',
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.greenAccent,
-                                    letterSpacing: 3,
+                                  reason.toUpperCase(),
+                                  textAlign: TextAlign.center,
+                                  style: getRetroStyle(
+                                    size: 16,
+                                    color: Colors.white,
                                   ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                Container(
+                                  color: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                    horizontal: 10,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "SCORE FINAL",
+                                        style: getRetroStyle(
+                                          color: Colors.yellow,
+                                          size: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        score.toString().padLeft(6, '0'),
+                                        style: const TextStyle(
+                                          fontFamily: 'Courier',
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.greenAccent,
+                                          letterSpacing: 3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                LeaderboardWidget(
+                                  currentScore: score,
+                                  playerName: playerName,
+                                  isNewHighScore: isHighScore,
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                RetroButton(
+                                  text: "REINTENTAR",
+                                  onPressed: onRestart,
+                                  color: Colors.green.shade800,
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                RetroButton(
+                                  text: "SALIR",
+                                  color: Colors.red.shade900,
+                                  onPressed: onReturnToMenu,
                                 ),
                               ],
                             ),
                           ),
-
-                          const SizedBox(height: 20),
-
-                          RetroButton(text: "REINTENTAR", onPressed: onRestart),
-
-                          RetroButton(
-                            text: "SALIR",
-                            color: Colors.grey.shade900,
-                            onPressed: onReturnToMenu,
-                          ),
                         ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),

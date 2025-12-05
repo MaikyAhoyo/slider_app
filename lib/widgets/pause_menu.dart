@@ -17,63 +17,72 @@ class PauseMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
-
-    final menuWidth = isLandscape ? size.height * 0.7 : 300.0;
-
-    return Stack(
-      children: [
-        Container(color: Colors.black.withOpacity(0.7)),
-
-        IgnorePointer(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.5, 0.5],
-                colors: [Colors.transparent, Colors.black.withOpacity(0.1)],
-                tileMode: TileMode.repeated,
-              ),
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.7)),
           ),
-        ),
 
-        Center(
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: menuWidth),
-              child: RetroWindow(
-                title: 'PAUSA',
-                icon: Icons.pause_circle_filled,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // BOTONES RETRO
-                    RetroButton(text: "CONTINUAR", onPressed: onResume),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isLandscape =
+                        MediaQuery.of(context).orientation ==
+                        Orientation.landscape;
+                    final double menuWidth = isLandscape ? 500 : 320;
 
-                    RetroButton(text: "REINICIAR", onPressed: onRestart),
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: menuWidth),
+                      child: RetroWindow(
+                        title: 'PAUSA',
+                        icon: Icons.pause_circle_filled,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            RetroButton(
+                              text: "CONTINUAR",
+                              onPressed: onResume,
+                              color: const Color(0xFF00AA00),
+                            ),
 
-                    RetroButton(text: "AJUSTES", onPressed: onSettings),
+                            const SizedBox(height: 10),
 
-                    const SizedBox(height: 15),
-                    const Divider(color: Colors.white24, thickness: 1),
-                    const SizedBox(height: 10),
+                            RetroButton(
+                              text: "REINICIAR",
+                              onPressed: onRestart,
+                            ),
 
-                    // BOTÓN SALIR (Rojo)
-                    RetroButton(
-                      text: "SALIR AL MENU",
-                      color: const Color(0xFFAA0000),
-                      onPressed: onQuit,
-                    ),
-                  ],
+                            const SizedBox(height: 10),
+
+                            RetroButton(text: "AJUSTES", onPressed: onSettings),
+
+                            const SizedBox(height: 15),
+                            const Divider(color: Colors.white24, thickness: 1),
+                            const SizedBox(height: 10),
+
+                            // BOTÓN SALIR (Rojo)
+                            RetroButton(
+                              text: "SALIR AL MENU",
+                              color: const Color(0xFFAA0000),
+                              onPressed: onQuit,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

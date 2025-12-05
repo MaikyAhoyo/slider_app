@@ -28,64 +28,82 @@ class _SettingsMenuState extends State<SettingsMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isLandscape = size.width > size.height;
-    final menuWidth = isLandscape ? size.height * 0.7 : 320.0;
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.8)),
+          ),
 
-    return Stack(
-      children: [
-        Container(color: Colors.black.withOpacity(0.7)),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isLandscape =
+                        MediaQuery.of(context).orientation ==
+                        Orientation.landscape;
+                    final double menuWidth = isLandscape ? 550 : 340;
 
-        Center(
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: menuWidth),
-              child: RetroWindow(
-                title: 'AJUSTES',
-                icon: Icons.settings,
-                onClose: widget.onBack,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildRetroSlider(
-                      label: "MASTER",
-                      value: _masterVolume,
-                      onChanged: (val) {
-                        setState(() => _masterVolume = val);
-                        _audioManager.setMasterVolume(val);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: menuWidth),
+                      child: RetroWindow(
+                        title: 'AJUSTES',
+                        icon: Icons.settings,
+                        onClose: widget.onBack,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 10),
 
-                    _buildRetroSlider(
-                      label: "MUSIC",
-                      value: _musicVolume,
-                      onChanged: (val) {
-                        setState(() => _musicVolume = val);
-                        _audioManager.setMusicVolume(val);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                            _buildRetroSlider(
+                              label: "MASTER",
+                              value: _masterVolume,
+                              onChanged: (val) {
+                                setState(() => _masterVolume = val);
+                                _audioManager.setMasterVolume(val);
+                              },
+                            ),
+                            const SizedBox(height: 20),
 
-                    _buildRetroSlider(
-                      label: "SFX",
-                      value: _sfxVolume,
-                      onChanged: (val) {
-                        setState(() => _sfxVolume = val);
-                        _audioManager.setSfxVolume(val);
-                      },
-                    ),
+                            _buildRetroSlider(
+                              label: "MUSIC",
+                              value: _musicVolume,
+                              onChanged: (val) {
+                                setState(() => _musicVolume = val);
+                                _audioManager.setMusicVolume(val);
+                              },
+                            ),
+                            const SizedBox(height: 20),
 
-                    const SizedBox(height: 25),
+                            _buildRetroSlider(
+                              label: "SFX",
+                              value: _sfxVolume,
+                              onChanged: (val) {
+                                setState(() => _sfxVolume = val);
+                                _audioManager.setSfxVolume(val);
+                              },
+                            ),
 
-                    RetroButton(text: "VOLVER", onPressed: widget.onBack),
-                  ],
+                            const SizedBox(height: 30),
+
+                            RetroButton(
+                              text: "VOLVER AL JUEGO",
+                              onPressed: widget.onBack,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -107,16 +125,16 @@ class _SettingsMenuState extends State<SettingsMenu> {
             ),
           ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 24,
+          height: 30,
           child: SliderTheme(
             data: SliderThemeData(
               trackHeight: 12,
               activeTrackColor: Colors.green,
               inactiveTrackColor: Colors.black54,
               thumbColor: Colors.white,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 0),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: SliderComponentShape.noOverlay,
               trackShape: const RectangularSliderTrackShape(),
             ),

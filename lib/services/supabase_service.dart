@@ -3,14 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Servicio centralizado para gestionar todas las interacciones con Supabase.
-/// 
+///
 /// Encapsula autenticación, consultas y operaciones CRUD en la tabla 'players'.
 class SupabaseService {
   final SupabaseClient _client;
 
   /// Constructor. Recibe el cliente de Supabase (por defecto usa Supabase.instance.client).
   SupabaseService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   /// Obtiene el cliente de Supabase (útil si necesitas acceso directo en casos especiales).
   SupabaseClient get client => _client;
@@ -29,12 +29,9 @@ class SupabaseService {
   // ============================================================================
 
   /// Inicia sesión con email y contraseña.
-  /// 
+  ///
   /// Retorna `true` si la autenticación fue exitosa, `false` en caso contrario.
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     try {
       final response = await _client.auth.signInWithPassword(
         email: email,
@@ -69,9 +66,9 @@ class SupabaseService {
   // ============================================================================
 
   /// Inserta un nuevo jugador en la tabla 'players'.
-  /// 
+  ///
   /// Si no hay sesión activa, intenta hacer sign-in primero usando credenciales del .env.
-  /// 
+  ///
   /// Parámetros:
   /// - [playerName]: Nombre del jugador.
   /// - [points]: Puntos iniciales del jugador.
@@ -92,7 +89,7 @@ class SupabaseService {
       debugPrint('⚠️ No hay sesión activa. Intentando autenticar...');
       final email = dotenv.env['AUTH_EMAIL'];
       final password = dotenv.env['AUTH_PASSWORD'];
-      
+
       if (email != null && password != null) {
         await signIn(email: email, password: password);
       } else {
@@ -120,9 +117,9 @@ class SupabaseService {
   }
 
   /// Actualiza los puntos de un jugador existente en la tabla 'players'.
-  /// 
+  ///
   /// Filtra por el nombre del jugador.
-  /// 
+  ///
   /// Parámetros:
   /// - [playerName]: Nombre del jugador a actualizar.
   /// - [points]: Nuevos puntos del jugador.
@@ -151,11 +148,11 @@ class SupabaseService {
   }
 
   /// Verifica si un jugador existe. Si existe, lo actualiza; si no, lo inserta (UPSERT).
-  /// 
+  ///
   /// Parámetros:
   /// - [playerName]: Nombre del jugador.
   /// - [score]: Puntos a asignar o actualizar.
-  Future<void> checkAndUpsertPlayer({
+  Future<bool> checkAndUpsertPlayer({
     required String playerName,
     required int score,
   }) async {
@@ -167,33 +164,34 @@ class SupabaseService {
           .limit(1);
 
       if (response.isNotEmpty) {
-        // Jugador existe → UPDATE
+        // Jugador existe
         final existingPlayer = response.first;
-        final existingPlayerName = existingPlayer['player_name'] as String;
         final existingPoints = existingPlayer['points'] as int;
 
-        debugPrint(
-            'Jugador $playerName | $existingPlayerName encontrado. Actualizando puntuación de $existingPoints a $score...');
-
-        await updatePlayer(playerName: playerName, points: score);
+        // SOLO actualizamos si el nuevo score es mayor
+        if (score > existingPoints) {
+          debugPrint('🚀 ¡NUEVO HIGH SCORE! ($score > $existingPoints)');
+          await updatePlayer(playerName: playerName, points: score);
+          return true; // Es record
+        } else {
+          debugPrint('📉 No superó el record ($score <= $existingPoints)');
+          return false; // No es record
+        }
       } else {
-        // Jugador NO existe → INSERT
-        debugPrint(
-            'Jugador $playerName no encontrado. Insertando nuevo registro...');
-
+        // Jugador nuevo -> Es su primer record
         await insertPlayer(playerName: playerName, points: score);
+        return true;
       }
-    } on PostgrestException catch (error) {
-      debugPrint('❌ Error de Supabase al buscar jugador: ${error.message}');
     } catch (error) {
-      debugPrint('❌ Error inesperado: $error');
+      debugPrint('❌ Error upsert: $error');
+      return false;
     }
   }
 
   /// Recupera los puntos de un jugador desde la tabla 'players'.
-  /// 
+  ///
   /// Retorna los puntos si el jugador existe, o `null` si no se encuentra.
-  /// 
+  ///
   /// Parámetros:
   /// - [playerName]: Nombre del jugador a buscar.
   Future<int?> retrievePoints({required String playerName}) async {
@@ -216,6 +214,42 @@ class SupabaseService {
     } catch (error) {
       debugPrint('❌ Error inesperado al recuperar puntos: $error');
       return null;
+    }
+  }
+
+  // ============================================================================
+  // LEADERBOARD & RANKING
+  // ============================================================================
+
+  /// Obtiene el Top de jugadores ordenados por puntos.
+  Future<List<Map<String, dynamic>>> getLeaderboard({int limit = 5}) async {
+    try {
+      final response = await _client
+          .from('players')
+          .select('player_name, points')
+          .order('points', ascending: false)
+          .limit(limit);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (error) {
+      debugPrint('❌ Error obteniendo leaderboard: $error');
+      return [];
+    }
+  }
+
+  /// Calcula el ranking global del jugador basado en sus puntos actuales.
+  /// (Cuántos jugadores tienen más puntos que tú + 1)
+  Future<int> getPlayerRank(int playerPoints) async {
+    try {
+      final count = await _client
+          .from('players')
+          .count(CountOption.exact)
+          .gt('points', playerPoints);
+
+      return count + 1;
+    } catch (error) {
+      debugPrint('❌ Error calculando ranking: $error');
+      return 0;
     }
   }
 }

@@ -360,18 +360,29 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Finaliza el juego
-  void _endGame(String reason) {
+  void _endGame(String reason) async {
     if (_isGameOver) return;
     _isGameOver = true;
     _gameLoopController.stop();
+    _stopMusic();
+    _playSound('game_over_sfx');
+
+    bool isRecord = await widget.supabaseService.checkAndUpsertPlayer(
+      playerName: widget.playerName,
+      score: _coins,
+    );
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        _playSound('game_over_sfx');
         return GameOverMenu(
           reason: reason,
           score: _coins,
+          isHighScore: isRecord,
+          playerName: widget.playerName,
           onReturnToMenu: () {
             Navigator.of(context).pop();
             Navigator.of(context).pop();
@@ -444,16 +455,12 @@ class _GameScreenState extends State<GameScreen>
               child: SizedBox(
                 width: effectiveWidth,
                 height: effectiveHeight,
-                child: ClipRect(
-                  child: content,
-                ),
+                child: ClipRect(child: content),
               ),
             ),
           );
         } else {
-          return Scaffold(
-            body: content,
-          );
+          return Scaffold(body: content);
         }
       },
     );
