@@ -26,12 +26,17 @@ class _ComboBannerState extends State<ComboBanner>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Un poco más rápido que el milestone
+      duration: const Duration(milliseconds: 1500),
     );
 
-    // Efecto de "pop" elástico
     _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.5).chain(CurveTween(curve: Curves.easeOutBack)), weight: 30),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.0,
+          end: 1.5,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
+      ),
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 20),
       TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
@@ -42,8 +47,7 @@ class _ComboBannerState extends State<ComboBanner>
       TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(_controller);
-    
-    // Ligera rotación para darle dinamismo
+
     _rotationAnimation = Tween<double>(begin: -0.1, end: 0.1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -68,29 +72,49 @@ class _ComboBannerState extends State<ComboBanner>
             angle: _rotationAnimation.value,
             child: Opacity(
               opacity: _opacityAnimation.value,
-              child: ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.yellowAccent, Colors.redAccent],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ).createShader(bounds),
-                child: Text(
-                  widget.text,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 40, // Texto grande
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Courier', // O tu fuente retro preferida
-                    color: Colors.white, // Necesario para que el ShaderMask funcione
-                    shadows: [
-                      Shadow(
-                        blurRadius: 10.0,
+              child: Stack(
+                children: [
+                  Transform.translate(
+                    offset: const Offset(4, 4),
+                    child: Text(
+                      widget.text,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Courier',
+                        fontStyle: FontStyle.italic,
                         color: Colors.black,
-                        offset: Offset(5.0, 5.0),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  Transform.translate(
+                    offset: const Offset(2, 2),
+                    child: Text(
+                      widget.text,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Courier',
+                        fontStyle: FontStyle.italic,
+                        color: Colors.red.shade900,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    widget.text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Courier',
+                      fontStyle: FontStyle.italic,
+                      color: Colors.yellowAccent,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
