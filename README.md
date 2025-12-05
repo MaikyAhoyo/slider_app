@@ -95,6 +95,11 @@ Esta aplicación utiliza variables de entorno para gestionar configuraciones sen
     ```bash
     flutter run
     ```
+5.  Crear .apk de la aplicación:
+    ```bash
+    flutter build ap --release
+    ```
+6.  Buscar la aplicación en: `(ruta del proyecto)\build\app\outputs\apk\release\app-release.apk`
 ---
 
 ## 📦 Dependencias Clave
