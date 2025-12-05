@@ -7,6 +7,7 @@ import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
 import 'widgets/game_over_menu.dart';
+import 'widgets/milestone_banner.dart'; // Importar el nuevo widget
 
 // Configuración de generación
 const double carWidth = 120;
@@ -63,6 +64,11 @@ class _GameScreenState extends State<GameScreen>
   // Variables para scroll infinito y velocidad
   double _gameSpeed = 7.0;
   double _backgroundScrollOffset = 0.0;
+
+  // Variables para el banner de milestone
+  String? _milestoneText;
+  int _lastMilestoneScore = 0;
+  static const int _milestoneStep = 500; // Cada 500 puntos
 
   @override
   void initState() {
@@ -301,10 +307,23 @@ class _GameScreenState extends State<GameScreen>
     await _audioManager.playSfx(soundId);
   }
 
-  /// Actualiza la dificultad del juego
+  /// Actualiza la dificultad del juego y verifica milestones
   void _updateDifficulty() {
     double newSpeed = 5.0 + (_coins / 300) * 0.5;
     _gameSpeed = newSpeed.clamp(7.0, 15.0);
+
+    // Verificar Milestone
+    if (_coins >= _lastMilestoneScore + _milestoneStep) {
+      _lastMilestoneScore += _milestoneStep;
+      _showMilestone("SPEED UP!");
+      _playSound('level_up_sfx'); // Asegúrate de registrar este sonido en AudioManager
+    }
+  }
+
+  void _showMilestone(String text) {
+    setState(() {
+      _milestoneText = text;
+    });
   }
 
   /// Actualiza el bucle del juego
@@ -514,6 +533,25 @@ class _GameScreenState extends State<GameScreen>
           ),
         ),
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
+        
+        // Banner de Milestone (Debajo de la UI)
+        if (_milestoneText != null)
+          Positioned(
+            top: 100, 
+            left: 0, 
+            right: 0, 
+            child: Center(
+              child: MilestoneBanner(
+                text: _milestoneText!,
+                onAnimationComplete: () {
+                  setState(() {
+                    _milestoneText = null;
+                  });
+                },
+              ),
+            ),
+          ),
+
         if (_isPaused && !_isSettings)
           PauseMenu(
             onResume: _resumeGame,
@@ -593,6 +631,25 @@ class _GameScreenState extends State<GameScreen>
           ),
         ),
         Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
+
+        // Banner de Milestone (Debajo de la UI en Landscape)
+        if (_milestoneText != null)
+          Positioned(
+            top: 70, 
+            left: 0, 
+            right: 0, 
+            child: Center(
+              child: MilestoneBanner(
+                text: _milestoneText!,
+                onAnimationComplete: () {
+                  setState(() {
+                    _milestoneText = null;
+                  });
+                },
+              ),
+            ),
+          ),
+
         if (_isPaused && !_isSettings)
           Center(
             child: PauseMenu(
