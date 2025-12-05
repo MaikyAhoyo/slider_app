@@ -400,7 +400,7 @@ class _GameScreenState extends State<GameScreen>
     if (_coins >= _lastMilestoneScore + _milestoneStep) {
       _lastMilestoneScore += _milestoneStep;
       _showMilestone("SPEED UP!");
-      _playSound('level_up_sfx'); // Asegúrate de registrar este sonido en AudioManager
+      _playSound('speed_up_sfx'); // Asegúrate de registrar este sonido en AudioManager
     }
   }
 
