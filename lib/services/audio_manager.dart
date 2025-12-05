@@ -9,6 +9,9 @@ class AudioManager {
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
 
+  // Variable para rastrear qué canción está sonando actualmente
+  String? _currentMusicId;
+
   double _masterVolume = 1.0;
   double _musicVolume = 1.0;
   double _sfxVolume = 1.0;
@@ -30,6 +33,22 @@ class AudioManager {
 
   AudioManager._internal() {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
+    
+    // --- SOLUCIÓN PARA QUE NO SE CORTE EL AUDIO ---
+    // Configuramos el contexto global para permitir mezclar sonidos (Música + SFX)
+    AudioPlayer.global.setAudioContext(AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.ambient, // Importante para juegos
+        options: {AVAudioSessionOptions.mixWithOthers},
+      ),
+      android: AudioContextAndroid(
+        isSpeakerphoneOn: true,
+        stayAwake: true,
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.game,
+        audioFocus: AndroidAudioFocus.none, // No pedir foco exclusivo
+      ),
+    ));
   }
 
   Future<void> loadSettings() async {
@@ -65,9 +84,7 @@ class AudioManager {
     StorageService().saveSfxVolume(_sfxVolume);
   }
 
-  /// Actualiza el volumen general
   void _updateVolumes() {
-    /// Multiplicamos por el Master para que baje todo junto si bajas el general
     _musicPlayer.setVolume(_masterVolume * _musicVolume);
     _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
   }
@@ -81,10 +98,15 @@ class AudioManager {
     }
 
     try {
-      /// No detenemos si ya está sonando la misma canción
-      if (_musicPlayer.state == PlayerState.playing) {
+      // --- SOLUCIÓN LOGICA DE REINICIO ---
+      // Solo retornamos si la canción QUE YA SUENA es LA MISMA que pedimos.
+      // Si es una canción diferente, permitimos que continúe para cambiarla.
+      if (_musicPlayer.state == PlayerState.playing && _currentMusicId == soundId) {
         return;
       }
+
+      // Actualizamos el ID actual
+      _currentMusicId = soundId;
 
       await _musicPlayer.stop();
       await _musicPlayer.setSource(AssetSource(path));
@@ -97,6 +119,7 @@ class AudioManager {
 
   /// Detiene la música
   Future<void> stopMusic() async {
+    _currentMusicId = null; // Reseteamos el ID al detener
     await _musicPlayer.stop();
   }
 
@@ -109,6 +132,13 @@ class AudioManager {
     }
 
     try {
+      // Para SFX, a veces es mejor detener el anterior si es el mismo canal,
+      // o usar play() directo si quieres solapamiento de efectos, 
+      // pero con setSource funciona bien para cosas simples.
+      if(_sfxPlayer.state == PlayerState.playing){
+          await _sfxPlayer.stop(); 
+      }
+      
       await _sfxPlayer.setSource(AssetSource(path));
       await _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
       await _sfxPlayer.resume();
