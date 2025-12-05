@@ -44,6 +44,8 @@ class _GameScreenState extends State<GameScreen>
   late double screenWidth;
   late double screenHeight;
   static const double spawnRate = 0.095;
+  static const double targetAspectRatio = 9 / 16;
+  static const double targetLandscapeRatio = 16 / 9;
 
   // Estado del juego
   double _fuel = 100.0;
@@ -383,8 +385,34 @@ class _GameScreenState extends State<GameScreen>
     return OrientationBuilder(
       builder: (context, orientation) {
         final size = MediaQuery.of(context).size;
-        screenWidth = size.width;
-        screenHeight = size.height;
+
+        // Calcular dimensiones efectivas del juego
+        double effectiveWidth = size.width;
+        double effectiveHeight = size.height;
+        bool needConstrain = false;
+
+        // Si estamos en portrait y la pantalla es muy ancha (ej. tablets),
+        // limitamos el ancho para mantener la relación de aspecto 9:16
+        if (orientation == Orientation.portrait) {
+          final double currentAspectRatio = size.width / size.height;
+          if (currentAspectRatio > targetAspectRatio) {
+            needConstrain = true;
+            effectiveWidth = size.height * targetAspectRatio;
+          }
+        }
+        // Si estamos en landscape y la pantalla es muy ancha (ej. teléfonos ultra-wide),
+        // limitamos el ancho para mantener la relación de aspecto 16:9
+        else {
+          final double currentAspectRatio = size.width / size.height;
+          if (currentAspectRatio > targetLandscapeRatio) {
+            needConstrain = true;
+            effectiveWidth = size.height * targetLandscapeRatio;
+          }
+        }
+
+        // Actualizar variables globales del estado
+        screenWidth = effectiveWidth;
+        screenHeight = effectiveHeight;
 
         if (orientation == Orientation.landscape) {
           roadWidth = screenHeight * 0.8;
@@ -392,11 +420,28 @@ class _GameScreenState extends State<GameScreen>
           roadWidth = screenWidth * 0.8;
         }
 
-        return Scaffold(
-          body: orientation == Orientation.portrait
-              ? _buildPortraitLayout()
-              : _buildLandscapeLayout(),
-        );
+        final Widget content = orientation == Orientation.portrait
+            ? _buildPortraitLayout()
+            : _buildLandscapeLayout();
+
+        if (needConstrain) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: SizedBox(
+                width: effectiveWidth,
+                height: effectiveHeight,
+                child: ClipRect(
+                  child: content,
+                ),
+              ),
+            ),
+          );
+        } else {
+          return Scaffold(
+            body: content,
+          );
+        }
       },
     );
   }
