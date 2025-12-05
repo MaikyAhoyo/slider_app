@@ -190,9 +190,9 @@ class _GameScreenState extends State<GameScreen>
 
     if (roll < 0.01) { // probabilidad del 1%
       return 'assets/objects/tire.png';
-    } else if (roll < 0.11) { // probabilidad del 10%
+    } else if (roll < 0.08) { // probabilidad del 10%
       return 'assets/objects/gas.png';
-    } else if (roll < 0.41) { // probabilidad del 30%
+    } else if (roll < 0.35) { // probabilidad del 30%
       return 'assets/objects/coin.png';
     } else {
       return _random.nextDouble() < 0.69 // probabilidad del 69% para roca normal y del 31% para roca grande
