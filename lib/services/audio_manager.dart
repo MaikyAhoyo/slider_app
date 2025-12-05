@@ -7,9 +7,8 @@ class AudioManager {
   static AudioManager get instance => _instance;
 
   final AudioPlayer _musicPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  final List<AudioPlayer> _activeSfxPlayers = [];
 
-  // Variable para rastrear qué canción está sonando actualmente
   String? _currentMusicId;
 
   double _masterVolume = 1.0;
@@ -29,29 +28,29 @@ class AudioManager {
     'coin_sfx': 'sfx/coin_sfx.wav',
     'tire_sfx': 'sfx/tire_sfx.wav',
     'crash_sfx': 'sfx/crash_sfx.wav',
-    'level_up_sfx': 'sfx/tire_sfx.wav', // Placeholder
+    'speed_up_sfx': 'sfx/speed_up_sfx.wav',
+    'combo_sfx': 'sfx/combo_sfx.wav',
   };
 
   AudioManager._internal() {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    
-    // --- SOLUCIÓN PARA QUE NO SE CORTE EL AUDIO ---
-    // Solo configuramos el contexto de audio si NO estamos en la web
+
     if (!kIsWeb) {
-      AudioPlayer.global.setAudioContext(AudioContext(
-        iOS: AudioContextIOS(
-          // CORRECCIÓN: Usar playback para permitir mixWithOthers explícito
-          category: AVAudioSessionCategory.playback, 
-          options: {AVAudioSessionOptions.mixWithOthers},
+      AudioPlayer.global.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: {AVAudioSessionOptions.mixWithOthers},
+          ),
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: false,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.game,
+            audioFocus: AndroidAudioFocus.none,
+          ),
         ),
-        android: AudioContextAndroid(
-          isSpeakerphoneOn: true,
-          stayAwake: true,
-          contentType: AndroidContentType.music,
-          usageType: AndroidUsageType.game,
-          audioFocus: AndroidAudioFocus.none, 
-        ),
-      ));
+      );
     }
   }
 
@@ -90,10 +89,12 @@ class AudioManager {
 
   void _updateVolumes() {
     _musicPlayer.setVolume(_masterVolume * _musicVolume);
-    _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
+
+    for (var player in _activeSfxPlayers) {
+      player.setVolume(_masterVolume * _sfxVolume);
+    }
   }
 
-  /// Reproduce música
   Future<void> playMusic(String soundId) async {
     final path = _soundMap[soundId];
     if (path == null) {
@@ -102,7 +103,8 @@ class AudioManager {
     }
 
     try {
-      if (_musicPlayer.state == PlayerState.playing && _currentMusicId == soundId) {
+      if (_musicPlayer.state == PlayerState.playing &&
+          _currentMusicId == soundId) {
         return;
       }
 
@@ -117,13 +119,11 @@ class AudioManager {
     }
   }
 
-  /// Detiene la música
   Future<void> stopMusic() async {
     _currentMusicId = null;
     await _musicPlayer.stop();
   }
 
-  /// Reproduce un efecto de sonido
   Future<void> playSfx(String soundId) async {
     final path = _soundMap[soundId];
     if (path == null) {
@@ -132,17 +132,19 @@ class AudioManager {
     }
 
     try {
-      // Usamos un player temporal para evitar conflictos y permitir superposición
-      final tempPlayer = AudioPlayer();
-      tempPlayer.setReleaseMode(ReleaseMode.stop);
-      
-      await tempPlayer.setSource(AssetSource(path));
-      await tempPlayer.setVolume(_masterVolume * _sfxVolume);
-      await tempPlayer.resume();
-      
-      tempPlayer.onPlayerComplete.listen((_) {
-        tempPlayer.dispose();
+      final sfxPlayer = AudioPlayer();
+      _activeSfxPlayers.add(sfxPlayer);
+
+      sfxPlayer.onPlayerComplete.listen((_) {
+        sfxPlayer.dispose();
+        _activeSfxPlayers.remove(sfxPlayer);
       });
+
+      await sfxPlayer.play(
+        AssetSource(path),
+        volume: _masterVolume * _sfxVolume,
+        mode: PlayerMode.lowLatency,
+      );
     } catch (e) {
       debugPrint('❌ Audio Manager: Error reproduciendo SFX: $e');
     }

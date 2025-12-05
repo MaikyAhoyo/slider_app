@@ -8,10 +8,10 @@ import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
 import 'widgets/game_over_menu.dart';
 import 'widgets/milestone_banner.dart';
-import 'widgets/combo_banner.dart'; // Importar nuevo widget
-import 'widgets/floating_text.dart'; // Importar
-import 'widgets/screen_flash.dart'; // Importar
-import 'widgets/pulsing_vignette.dart'; // Importar
+import 'widgets/combo_banner.dart';
+import 'widgets/floating_text.dart';
+import 'widgets/screen_flash.dart';
+import 'widgets/pulsing_vignette.dart';
 
 // Configuración de generación
 const double carWidth = 120;
@@ -60,7 +60,7 @@ class _GameScreenState extends State<GameScreen>
   double _fuel = 100.0;
   int _tires = 3;
   int _coins = 0;
-  int _coinStreak = 0; // NUEVO: Contador de racha
+  int _coinStreak = 0;
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
@@ -72,13 +72,13 @@ class _GameScreenState extends State<GameScreen>
 
   // Variables para el banner de milestone
   String? _milestoneText;
-  String? _comboText; // Variable para el texto del combo
+  String? _comboText;
   int _lastMilestoneScore = 0;
-  static const int _milestoneStep = 800; // Cada 500 puntos
+  static const int _milestoneStep = 800;
 
   // Variables para efectos visuales
-  final List<Widget> _visualEffects = []; 
-  bool _showDamageFlash = false; 
+  final List<Widget> _visualEffects = [];
+  bool _showDamageFlash = false;
 
   // KEYS PARA PRESERVAR EL ESTADO DEL CARRO
   final GlobalKey _carKeyPortrait = GlobalKey();
@@ -188,14 +188,18 @@ class _GameScreenState extends State<GameScreen>
       return 'assets/objects/gas.png';
     }
 
-    if (roll < 0.01) { // probabilidad del 1%
+    if (roll < 0.01) {
+      // probabilidad del 1%
       return 'assets/objects/tire.png';
-    } else if (roll < 0.08) { // probabilidad del 10%
+    } else if (roll < 0.05) {
+      // probabilidad del 4%
       return 'assets/objects/gas.png';
-    } else if (roll < 0.35) { // probabilidad del 30%
+    } else if (roll < 0.35) {
+      // probabilidad del 30%
       return 'assets/objects/coin.png';
     } else {
-      return _random.nextDouble() < 0.69 // probabilidad del 69% para roca normal y del 31% para roca grande
+      return _random.nextDouble() <
+              0.69 // probabilidad del 69%
           ? 'assets/objects/rock.png'
           : 'assets/objects/rock_large.png';
     }
@@ -258,7 +262,7 @@ class _GameScreenState extends State<GameScreen>
       // Ajustar tamaño de hitbox: 0.5 para rocas grandes, 0.7 para el resto
       double hitboxFactor = 0.7;
       if (obj.asset.contains('rock_large')) {
-        hitboxFactor = 0.65; 
+        hitboxFactor = 0.65;
       }
 
       if (isLandscape) {
@@ -291,11 +295,10 @@ class _GameScreenState extends State<GameScreen>
           carRight > objLeft &&
           carTop < objBottom &&
           carBottom > objTop) {
-        
         // Calcular posición para el texto flotante (centro del objeto)
         final effectPos = Offset(
-            isLandscape ? objScreenX : objScreenX, 
-            isLandscape ? objScreenY : objScreenY
+          isLandscape ? objScreenX : objScreenX,
+          isLandscape ? objScreenY : objScreenY,
         );
 
         if (obj.asset == 'assets/objects/gas.png') {
@@ -304,15 +307,13 @@ class _GameScreenState extends State<GameScreen>
           _addFloatingText("+GAS", Colors.greenAccent, effectPos);
         } else if (obj.asset == 'assets/objects/coin.png') {
           _coins += 100;
-          
+
           // Lógica de Combo
           _coinStreak++;
           if (_coinStreak % 5 == 0) {
-            _showCombo("COMBO x$_coinStreak!"); 
-            _playSound('tire_sfx'); 
+            _showCombo("COMBO x$_coinStreak!");
+            _playSound('combo_sfx');
           } else {
-            // Solo reproducir sonido de moneda normal si NO es combo
-            // para no saturar el audio
             _playSound('coin_sfx');
           }
 
@@ -324,9 +325,9 @@ class _GameScreenState extends State<GameScreen>
         } else if (obj.asset == 'assets/objects/rock.png' ||
             obj.asset == 'assets/objects/rock_large.png') {
           _tires -= 1;
-          _coinStreak = 0; // Romper racha al chocar
+          _coinStreak = 0;
           _playSound('crash_sfx');
-          _triggerDamageFlash(); // Activar flash rojo
+          _triggerDamageFlash();
         }
         _gameObjects.removeAt(i);
       }
@@ -337,7 +338,7 @@ class _GameScreenState extends State<GameScreen>
     // Ajustar posición si es landscape para que se vea bien
     // En landscape, las coordenadas visuales pueden variar, usamos una posición relativa segura si falla
     // Pero usaremos la posición calculada en _checkCollisions
-    
+
     late UniqueKey key = UniqueKey();
     final widget = FloatingText(
       key: key,
@@ -350,7 +351,7 @@ class _GameScreenState extends State<GameScreen>
         });
       },
     );
-    
+
     setState(() {
       _visualEffects.add(widget);
     });
@@ -362,7 +363,7 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  /// Reproduce música dependiendo del fondo (Ahora usa _currentBackgroundPath)
+  /// Reproduce música dependiendo del fondo
   Future<void> _playMusic() async {
     String theme = 'menu_theme';
     if (_currentBackgroundPath.contains('forest')) {
@@ -400,16 +401,18 @@ class _GameScreenState extends State<GameScreen>
     if (_coins >= _lastMilestoneScore + _milestoneStep) {
       _lastMilestoneScore += _milestoneStep;
       _showMilestone("SPEED UP!");
-      _playSound('speed_up_sfx'); // Asegúrate de registrar este sonido en AudioManager
+      _playSound('speed_up_sfx');
     }
   }
 
+  /// Muestra un mensaje de milestone
   void _showMilestone(String text) {
     setState(() {
       _milestoneText = text;
     });
   }
 
+  /// Muestra un mensaje de combo
   void _showCombo(String text) {
     setState(() {
       _comboText = text;
@@ -458,20 +461,20 @@ class _GameScreenState extends State<GameScreen>
       _fuel = 100.0;
       _tires = 3;
       _coins = 0;
-      _coinStreak = 0; 
+      _coinStreak = 0;
       _isGameOver = false;
       _gameSpeed = 5.0;
       _backgroundScrollOffset = 0.0;
-      _lastMilestoneScore = 0; 
+      _lastMilestoneScore = 0;
       _milestoneText = null;
-      _comboText = null; // Resetear combo text
+      _comboText = null;
     });
     _playMusic();
 
     _gameLoopController.reset();
     _gameLoopController.repeat();
     _gameObjects.clear();
-    _visualEffects.clear(); // También es buena idea limpiar efectos visuales pendientes
+    _visualEffects.clear();
     _isPaused = false;
   }
 
@@ -625,7 +628,7 @@ class _GameScreenState extends State<GameScreen>
           child: Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
             child: DraggableCar(
-              key: _carKeyPortrait, // <--- ASIGNAR KEY AQUÍ
+              key: _carKeyPortrait,
               imagePath: widget.carAssetPath,
               width: carWidth,
               height: 70,
@@ -635,27 +638,25 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
-        
+
         // EFECTOS VISUALES
         ..._visualEffects,
 
         // VIÑETA DE SALUD BAJA (Si solo queda 1 llanta)
-        if (_tires == 1)
-          const PulsingVignette(color: Colors.red),
+        if (_tires == 1) const PulsingVignette(color: Colors.red),
 
         // VIÑETA DE GASOLINA BAJA (Si queda 20% o menos)
-        if (_fuel <= 20.0)
-          const PulsingVignette(color: Colors.yellow),
+        if (_fuel <= 20.0) const PulsingVignette(color: Colors.yellow),
 
         // UI
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
-        
+
         // Banner de Milestone (Arriba)
         if (_milestoneText != null)
           Positioned(
-            top: 100, 
-            left: 0, 
-            right: 0, 
+            top: 100,
+            left: 0,
+            right: 0,
             child: Center(
               child: MilestoneBanner(
                 text: _milestoneText!,
@@ -668,12 +669,12 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
-        // Banner de Combo (Más abajo y centrado)
+        // Banner de Combo
         if (_comboText != null)
           Positioned(
-            top: screenHeight * 0.3, // 30% de la altura de la pantalla
-            left: 0, 
-            right: 0, 
+            top: screenHeight * 0.3,
+            left: 0,
+            right: 0,
             child: Center(
               child: ComboBanner(
                 text: _comboText!,
@@ -686,7 +687,7 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
-        // FLASH DE DAÑO (Encima de todo excepto menús)
+        // FLASH DE DAÑO
         if (_showDamageFlash)
           ScreenFlash(
             onComplete: () => setState(() => _showDamageFlash = false),
@@ -761,7 +762,7 @@ class _GameScreenState extends State<GameScreen>
             child: SizedBox(
               height: roadWidth,
               child: DraggableCarHorizontal(
-                key: _carKeyLandscape, // <--- ASIGNAR KEY AQUÍ
+                key: _carKeyLandscape,
                 imagePath: widget.carAssetPath,
                 width: 70,
                 height: carWidth,
@@ -777,9 +778,9 @@ class _GameScreenState extends State<GameScreen>
         // Banner Milestone
         if (_milestoneText != null)
           Positioned(
-            top: 70, 
-            left: 0, 
-            right: 0, 
+            top: 70,
+            left: 0,
+            right: 0,
             child: Center(
               child: MilestoneBanner(
                 text: _milestoneText!,
@@ -792,12 +793,12 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
-        // Banner de Combo (Más abajo)
+        // Banner de Combo
         if (_comboText != null)
           Positioned(
-            top: screenHeight * 0.4, // Un poco más abajo en landscape
-            left: 0, 
-            right: 0, 
+            top: screenHeight * 0.4,
+            left: 0,
+            right: 0,
             child: Center(
               child: ComboBanner(
                 text: _comboText!,
