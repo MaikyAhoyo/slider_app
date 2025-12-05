@@ -353,6 +353,8 @@ class _GameScreenState extends State<GameScreen>
       _gameSpeed = 5.0;
       _backgroundScrollOffset = 0.0;
     });
+    _playMusic();
+
     _gameLoopController.reset();
     _gameLoopController.repeat();
     _gameObjects.clear();
