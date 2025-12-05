@@ -7,7 +7,11 @@ import 'widgets/draggable_car.dart';
 import 'widgets/pause_menu.dart';
 import 'widgets/settings_menu.dart';
 import 'widgets/game_over_menu.dart';
-import 'widgets/milestone_banner.dart'; // Importar el nuevo widget
+import 'widgets/milestone_banner.dart';
+import 'widgets/combo_banner.dart'; // Importar nuevo widget
+import 'widgets/floating_text.dart'; // Importar
+import 'widgets/screen_flash.dart'; // Importar
+import 'widgets/pulsing_vignette.dart'; // Importar
 
 // Configuración de generación
 const double carWidth = 120;
@@ -56,6 +60,7 @@ class _GameScreenState extends State<GameScreen>
   double _fuel = 100.0;
   int _tires = 3;
   int _coins = 0;
+  int _coinStreak = 0; // NUEVO: Contador de racha
   bool _isPaused = false;
   bool _isSettings = false;
   bool _isGameOver = false;
@@ -67,8 +72,17 @@ class _GameScreenState extends State<GameScreen>
 
   // Variables para el banner de milestone
   String? _milestoneText;
+  String? _comboText; // Variable para el texto del combo
   int _lastMilestoneScore = 0;
-  static const int _milestoneStep = 500; // Cada 500 puntos
+  static const int _milestoneStep = 800; // Cada 500 puntos
+
+  // Variables para efectos visuales
+  final List<Widget> _visualEffects = []; 
+  bool _showDamageFlash = false; 
+
+  // KEYS PARA PRESERVAR EL ESTADO DEL CARRO
+  final GlobalKey _carKeyPortrait = GlobalKey();
+  final GlobalKey _carKeyLandscape = GlobalKey();
 
   @override
   void initState() {
@@ -174,14 +188,14 @@ class _GameScreenState extends State<GameScreen>
       return 'assets/objects/gas.png';
     }
 
-    if (roll < 0.01) {
+    if (roll < 0.01) { // probabilidad del 1%
       return 'assets/objects/tire.png';
-    } else if (roll < 0.11) {
+    } else if (roll < 0.11) { // probabilidad del 10%
       return 'assets/objects/gas.png';
-    } else if (roll < 0.41) {
+    } else if (roll < 0.41) { // probabilidad del 30%
       return 'assets/objects/coin.png';
     } else {
-      return _random.nextBool()
+      return _random.nextDouble() < 0.69 // probabilidad del 69% para roca normal y del 31% para roca grande
           ? 'assets/objects/rock.png'
           : 'assets/objects/rock_large.png';
     }
@@ -197,11 +211,19 @@ class _GameScreenState extends State<GameScreen>
       if (isLandscape) {
         _gameObjects[i].y -= _gameSpeed;
         if (_gameObjects[i].y < -100) {
+          // Si una moneda sale de la pantalla sin ser recogida, se rompe la racha
+          if (_gameObjects[i].asset == 'assets/objects/coin.png') {
+            _coinStreak = 0;
+          }
           _gameObjects.removeAt(i);
         }
       } else {
         _gameObjects[i].y += _gameSpeed;
         if (_gameObjects[i].y > screenHeight) {
+          // Si una moneda sale de la pantalla sin ser recogida, se rompe la racha
+          if (_gameObjects[i].asset == 'assets/objects/coin.png') {
+            _coinStreak = 0;
+          }
           _gameObjects.removeAt(i);
         }
       }
@@ -233,49 +255,111 @@ class _GameScreenState extends State<GameScreen>
       double objScreenX, objScreenY;
       double objHitboxWidth, objHitboxHeight;
 
+      // Ajustar tamaño de hitbox: 0.5 para rocas grandes, 0.7 para el resto
+      double hitboxFactor = 0.7;
+      if (obj.asset.contains('rock_large')) {
+        hitboxFactor = 0.65; 
+      }
+
       if (isLandscape) {
         objScreenX = obj.y;
         objScreenY = (screenHeight / 2) + obj.x - (obj.width / 2);
-        objHitboxWidth = obj.width * 0.7;
-        objHitboxHeight = obj.height * 0.7;
+        objHitboxWidth = obj.width * hitboxFactor;
+        objHitboxHeight = obj.height * hitboxFactor;
       } else {
         objScreenX = (screenWidth / 2) + obj.x - (obj.width / 2);
         objScreenY = obj.y;
-        objHitboxWidth = obj.width * 0.7;
-        objHitboxHeight = obj.height * 0.7;
+        objHitboxWidth = obj.width * hitboxFactor;
+        objHitboxHeight = obj.height * hitboxFactor;
       }
+
+      // Centrar la hitbox dentro del objeto visual para que sea más justo
+      double offsetX = (obj.width - objHitboxWidth) / 2;
+      double offsetY = (obj.height - objHitboxHeight) / 2;
+
+      double objLeft = objScreenX + offsetX;
+      double objRight = objLeft + objHitboxWidth;
+      double objTop = objScreenY + offsetY;
+      double objBottom = objTop + objHitboxHeight;
 
       double carLeft = carScreenX;
       double carRight = carScreenX + carHitboxWidth;
       double carTop = carScreenY;
       double carBottom = carScreenY + carHitboxHeight;
 
-      double objLeft = objScreenX;
-      double objRight = objScreenX + objHitboxWidth;
-      double objTop = objScreenY;
-      double objBottom = objScreenY + objHitboxHeight;
-
       if (carLeft < objRight &&
           carRight > objLeft &&
           carTop < objBottom &&
           carBottom > objTop) {
+        
+        // Calcular posición para el texto flotante (centro del objeto)
+        final effectPos = Offset(
+            isLandscape ? objScreenX : objScreenX, 
+            isLandscape ? objScreenY : objScreenY
+        );
+
         if (obj.asset == 'assets/objects/gas.png') {
           _fuel = (_fuel + 30).clamp(0, 100);
           _playSound('gas_sfx');
+          _addFloatingText("+GAS", Colors.greenAccent, effectPos);
         } else if (obj.asset == 'assets/objects/coin.png') {
           _coins += 100;
-          _playSound('coin_sfx');
+          
+          // Lógica de Combo
+          _coinStreak++;
+          if (_coinStreak % 5 == 0) {
+            _showCombo("COMBO x$_coinStreak!"); 
+            _playSound('tire_sfx'); 
+          } else {
+            // Solo reproducir sonido de moneda normal si NO es combo
+            // para no saturar el audio
+            _playSound('coin_sfx');
+          }
+
+          _addFloatingText("+100", Colors.yellowAccent, effectPos);
         } else if (obj.asset == 'assets/objects/tire.png') {
           _tires += 1;
           _playSound('tire_sfx');
+          _addFloatingText("+1 TIRE", Colors.orangeAccent, effectPos);
         } else if (obj.asset == 'assets/objects/rock.png' ||
             obj.asset == 'assets/objects/rock_large.png') {
           _tires -= 1;
+          _coinStreak = 0; // Romper racha al chocar
           _playSound('crash_sfx');
+          _triggerDamageFlash(); // Activar flash rojo
         }
         _gameObjects.removeAt(i);
       }
     }
+  }
+
+  void _addFloatingText(String text, Color color, Offset pos) {
+    // Ajustar posición si es landscape para que se vea bien
+    // En landscape, las coordenadas visuales pueden variar, usamos una posición relativa segura si falla
+    // Pero usaremos la posición calculada en _checkCollisions
+    
+    late UniqueKey key = UniqueKey();
+    final widget = FloatingText(
+      key: key,
+      text: text,
+      color: color,
+      startPosition: pos,
+      onAnimationComplete: () {
+        setState(() {
+          _visualEffects.removeWhere((element) => element.key == key);
+        });
+      },
+    );
+    
+    setState(() {
+      _visualEffects.add(widget);
+    });
+  }
+
+  void _triggerDamageFlash() {
+    setState(() {
+      _showDamageFlash = true;
+    });
   }
 
   /// Reproduce música dependiendo del fondo (Ahora usa _currentBackgroundPath)
@@ -326,6 +410,12 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
+  void _showCombo(String text) {
+    setState(() {
+      _comboText = text;
+    });
+  }
+
   /// Actualiza el bucle del juego
   void _onGameLoopTick() {
     if (_isGameOver) return;
@@ -368,15 +458,20 @@ class _GameScreenState extends State<GameScreen>
       _fuel = 100.0;
       _tires = 3;
       _coins = 0;
+      _coinStreak = 0; 
       _isGameOver = false;
       _gameSpeed = 5.0;
       _backgroundScrollOffset = 0.0;
+      _lastMilestoneScore = 0; 
+      _milestoneText = null;
+      _comboText = null; // Resetear combo text
     });
     _playMusic();
 
     _gameLoopController.reset();
     _gameLoopController.repeat();
     _gameObjects.clear();
+    _visualEffects.clear(); // También es buena idea limpiar efectos visuales pendientes
     _isPaused = false;
   }
 
@@ -530,6 +625,7 @@ class _GameScreenState extends State<GameScreen>
           child: Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
             child: DraggableCar(
+              key: _carKeyPortrait, // <--- ASIGNAR KEY AQUÍ
               imagePath: widget.carAssetPath,
               width: carWidth,
               height: 70,
@@ -539,9 +635,22 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
         ),
+        
+        // EFECTOS VISUALES
+        ..._visualEffects,
+
+        // VIÑETA DE SALUD BAJA (Si solo queda 1 llanta)
+        if (_tires == 1)
+          const PulsingVignette(color: Colors.red),
+
+        // VIÑETA DE GASOLINA BAJA (Si queda 20% o menos)
+        if (_fuel <= 20.0)
+          const PulsingVignette(color: Colors.yellow),
+
+        // UI
         Positioned(top: 40, left: 10, right: 10, child: _buildGameUI()),
         
-        // Banner de Milestone (Debajo de la UI)
+        // Banner de Milestone (Arriba)
         if (_milestoneText != null)
           Positioned(
             top: 100, 
@@ -559,6 +668,31 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
+        // Banner de Combo (Más abajo y centrado)
+        if (_comboText != null)
+          Positioned(
+            top: screenHeight * 0.3, // 30% de la altura de la pantalla
+            left: 0, 
+            right: 0, 
+            child: Center(
+              child: ComboBanner(
+                text: _comboText!,
+                onAnimationComplete: () {
+                  setState(() {
+                    _comboText = null;
+                  });
+                },
+              ),
+            ),
+          ),
+
+        // FLASH DE DAÑO (Encima de todo excepto menús)
+        if (_showDamageFlash)
+          ScreenFlash(
+            onComplete: () => setState(() => _showDamageFlash = false),
+          ),
+
+        // Menus
         if (_isPaused && !_isSettings)
           PauseMenu(
             onResume: _resumeGame,
@@ -627,6 +761,7 @@ class _GameScreenState extends State<GameScreen>
             child: SizedBox(
               height: roadWidth,
               child: DraggableCarHorizontal(
+                key: _carKeyLandscape, // <--- ASIGNAR KEY AQUÍ
                 imagePath: widget.carAssetPath,
                 width: 70,
                 height: carWidth,
@@ -639,7 +774,7 @@ class _GameScreenState extends State<GameScreen>
         ),
         Positioned(top: 10, left: 10, right: 10, child: _buildGameUI()),
 
-        // Banner de Milestone (Debajo de la UI en Landscape)
+        // Banner Milestone
         if (_milestoneText != null)
           Positioned(
             top: 70, 
@@ -657,6 +792,31 @@ class _GameScreenState extends State<GameScreen>
             ),
           ),
 
+        // Banner de Combo (Más abajo)
+        if (_comboText != null)
+          Positioned(
+            top: screenHeight * 0.4, // Un poco más abajo en landscape
+            left: 0, 
+            right: 0, 
+            child: Center(
+              child: ComboBanner(
+                text: _comboText!,
+                onAnimationComplete: () {
+                  setState(() {
+                    _comboText = null;
+                  });
+                },
+              ),
+            ),
+          ),
+
+        // FLASH DE DAÑO
+        if (_showDamageFlash)
+          ScreenFlash(
+            onComplete: () => setState(() => _showDamageFlash = false),
+          ),
+
+        // Menus
         if (_isPaused && !_isSettings)
           Center(
             child: PauseMenu(
