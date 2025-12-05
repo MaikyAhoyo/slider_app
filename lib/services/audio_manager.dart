@@ -29,26 +29,30 @@ class AudioManager {
     'coin_sfx': 'sfx/coin_sfx.wav',
     'tire_sfx': 'sfx/tire_sfx.wav',
     'crash_sfx': 'sfx/crash_sfx.wav',
+    'level_up_sfx': 'sfx/tire_sfx.wav', // Placeholder
   };
 
   AudioManager._internal() {
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
     
     // --- SOLUCIÓN PARA QUE NO SE CORTE EL AUDIO ---
-    // Configuramos el contexto global para permitir mezclar sonidos (Música + SFX)
-    AudioPlayer.global.setAudioContext(AudioContext(
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.ambient, // Importante para juegos
-        options: {AVAudioSessionOptions.mixWithOthers},
-      ),
-      android: AudioContextAndroid(
-        isSpeakerphoneOn: true,
-        stayAwake: true,
-        contentType: AndroidContentType.music,
-        usageType: AndroidUsageType.game,
-        audioFocus: AndroidAudioFocus.none, // No pedir foco exclusivo
-      ),
-    ));
+    // Solo configuramos el contexto de audio si NO estamos en la web
+    if (!kIsWeb) {
+      AudioPlayer.global.setAudioContext(AudioContext(
+        iOS: AudioContextIOS(
+          // CORRECCIÓN: Usar playback para permitir mixWithOthers explícito
+          category: AVAudioSessionCategory.playback, 
+          options: {AVAudioSessionOptions.mixWithOthers},
+        ),
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: true,
+          stayAwake: true,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.none, 
+        ),
+      ));
+    }
   }
 
   Future<void> loadSettings() async {
@@ -98,14 +102,10 @@ class AudioManager {
     }
 
     try {
-      // --- SOLUCIÓN LOGICA DE REINICIO ---
-      // Solo retornamos si la canción QUE YA SUENA es LA MISMA que pedimos.
-      // Si es una canción diferente, permitimos que continúe para cambiarla.
       if (_musicPlayer.state == PlayerState.playing && _currentMusicId == soundId) {
         return;
       }
 
-      // Actualizamos el ID actual
       _currentMusicId = soundId;
 
       await _musicPlayer.stop();
@@ -119,7 +119,7 @@ class AudioManager {
 
   /// Detiene la música
   Future<void> stopMusic() async {
-    _currentMusicId = null; // Reseteamos el ID al detener
+    _currentMusicId = null;
     await _musicPlayer.stop();
   }
 
@@ -132,16 +132,17 @@ class AudioManager {
     }
 
     try {
-      // Para SFX, a veces es mejor detener el anterior si es el mismo canal,
-      // o usar play() directo si quieres solapamiento de efectos, 
-      // pero con setSource funciona bien para cosas simples.
-      if(_sfxPlayer.state == PlayerState.playing){
-          await _sfxPlayer.stop(); 
-      }
+      // Usamos un player temporal para evitar conflictos y permitir superposición
+      final tempPlayer = AudioPlayer();
+      tempPlayer.setReleaseMode(ReleaseMode.stop);
       
-      await _sfxPlayer.setSource(AssetSource(path));
-      await _sfxPlayer.setVolume(_masterVolume * _sfxVolume);
-      await _sfxPlayer.resume();
+      await tempPlayer.setSource(AssetSource(path));
+      await tempPlayer.setVolume(_masterVolume * _sfxVolume);
+      await tempPlayer.resume();
+      
+      tempPlayer.onPlayerComplete.listen((_) {
+        tempPlayer.dispose();
+      });
     } catch (e) {
       debugPrint('❌ Audio Manager: Error reproduciendo SFX: $e');
     }
